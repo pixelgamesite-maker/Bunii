@@ -51,6 +51,7 @@ export default function Home() {
             linear-gradient(172deg, ${plum} 0%, ${plum} 48%, ${plumDeep} 100%);
         }
 
+        /* ── header ── */
         .bar{
           position:sticky;top:0;z-index:40;
           display:flex;align-items:center;justify-content:space-between;gap:20px;
@@ -76,6 +77,7 @@ export default function Home() {
           background:${goldLine};border-color:${goldLine};color:${plumDeep};outline:none;
         }
 
+        /* ── banners ── */
         .deck{
           flex:1;width:100%;max-width:1120px;margin:0 auto;
           display:flex;flex-direction:column;justify-content:center;
