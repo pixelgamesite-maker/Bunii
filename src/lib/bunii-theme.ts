@@ -1,25 +1,39 @@
-// Design tokens for the Bunii site. One playful, bunny-appropriate palette
-// instead of the muted "editorial luxury" look — everything importing
-// these updates together.
+// Design tokens for Bunii.
+//
+// The art is flat, cel-shaded, heavy black outline — sticker / trading-card
+// territory. So the palette is warm and saturated rather than pastel, and
+// every surface is drawn with an ink outline instead of a soft shadow.
+//
+// Two groups below:
+//   1. Site tokens  — the warm honey/cream ground used by the marketing page.
+//   2. Legacy tokens — the old dark names (bg, bgDeep, panel, gold, mint,
+//      yellow, ink) kept so game.tsx keeps compiling. They've been re-tuned
+//      from plum to warm espresso so the arcade cabinet matches the site.
 
 export const FONT_LINK =
-  "https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap";
+  "https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito+Sans:wght@400;600;700;900&display=swap";
 
-// Display font (headlines, buttons, numbers) — rounded and bouncy, no italics.
-export const serif = "'Baloo 2', system-ui, sans-serif";
-// Body font — friendly, rounded, easy to read at small sizes.
+// Display: single heavy weight, used only for the wordmark and section heads.
+export const serif = "'Alfa Slab One', Georgia, serif";
+// Body: rounded and friendly, matches the cartoon linework at small sizes.
 export const sans = "'Nunito Sans', system-ui, sans-serif";
 
-// Deep plum background, ties the marketing site to the claw-machine game's
-// own cabinet palette instead of looking like two unrelated products.
-export const bg = "#1c0c30";
-export const bgDeep = "#140823";
-export const panel = "#2a1444";
+/* ── Site palette ───────────────────────────────────────────────── */
 
-// Primary accent: bubblegum pink. Secondary: mint. Tertiary: sunny yellow.
-export const gold = "#ff5fa2"; // kept the variable name for import compatibility
-export const goldLight = "#ff8fc0";
-export const mint = "#7ee8c9";
-export const yellow = "#ffd166";
+export const honey = "#E0A63C"; // page ground
+export const honeyDeep = "#C88C28"; // ground shading, pressed states
+export const cream = "#F7EAD2"; // panel and card faces
+export const inkDark = "#1A1206"; // outlines, body text, hard shadows
+export const ember = "#C4472A"; // accent — from the red in the zombie bun
+export const espresso = "#2B1A0C"; // dark bands (footer, ticker)
 
-export const ink = "#fff7fb";
+/* ── Legacy names (game.tsx) ────────────────────────────────────── */
+
+export const bg = espresso;
+export const bgDeep = inkDark;
+export const panel = "#3A250F";
+export const gold = honey;
+export const goldLight = "#F2C46A";
+export const mint = ember;
+export const yellow = "#F2C46A";
+export const ink = cream;
