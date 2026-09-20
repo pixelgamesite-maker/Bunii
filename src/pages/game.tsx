@@ -1,80 +1,78 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link } from "wouter";
-import { FONT_LINK, bg, gold, sans, serif } from "@/lib/bunii-theme";
-import { ClawMachine } from "@/components/bunii/ClawMachine";
+import { FONT_LINK, creamInk, goldLine, plum, plumDeep, plumLift, sans, serif, violetGlow } from "@/lib/bunii-theme";
+import { BuniiDrop } from "@/components/bunii/BuniiDrop";
 
 export default function Game() {
-  const [ready, setReady] = useState(false);
-
   useEffect(() => {
     const l = document.createElement("link");
     l.rel = "stylesheet";
     l.href = FONT_LINK;
     document.head.appendChild(l);
-    setReady(true);
   }, []);
 
   return (
-    <div style={{ background: bg, minHeight: "100vh", fontFamily: sans, color: "#fff" }}>
-      <header
-        style={{
-          padding: "0 20px",
-          height: "62px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-        }}
-      >
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <img src="/bunii-logo.jpg" style={{ width: "26px", height: "26px", borderRadius: "6px", objectFit: "cover" }} alt="" />
-          <span style={{ fontFamily: serif, fontSize: "0.95rem", fontWeight: 800, color: "#fff", letterSpacing: "0.01em" }}>Bunii</span>
+    <div className="gpage">
+      <style>{`
+        *{box-sizing:border-box;}
+        body{margin:0;background:${plum};}
+        a{color:inherit;text-decoration:none;}
+        .gpage{
+          min-height:100svh;display:flex;flex-direction:column;
+          font-family:${sans};color:${creamInk};
+          background:
+            radial-gradient(85% 60% at 50% 0%, ${plumLift} 0%, transparent 62%),
+            radial-gradient(70% 50% at 50% 100%, ${violetGlow}2e 0%, transparent 70%),
+            linear-gradient(172deg, ${plum} 0%, ${plumDeep} 100%);
+        }
+        .gbar{
+          display:flex;align-items:center;justify-content:space-between;
+          padding:16px clamp(18px,4vw,36px);
+          background:${plumLift}f2;
+          backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+          box-shadow:inset 0 -1px 0 ${goldLine}26;
+        }
+        .gbrand{display:flex;align-items:center;gap:12px;}
+        .gbrand img{width:38px;height:38px;border-radius:50%;object-fit:cover;
+          box-shadow:0 0 0 1px ${goldLine}59;}
+        .gbrand span{font-family:${serif};font-weight:800;font-size:1.35rem;
+          letter-spacing:-.015em;}
+        .gback{
+          font-size:.72rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+          color:${creamInk}b3;border:1px solid ${goldLine}33;border-radius:999px;
+          padding:10px 20px;transition:background .25s ease,color .25s ease;
+        }
+        .gback:hover,.gback:focus-visible{background:${goldLine};color:${plumDeep};outline:none;}
+
+        .stage{
+          flex:1;display:flex;flex-direction:column;align-items:center;
+          gap:18px;padding:clamp(22px,5vh,44px) 18px clamp(34px,7vh,64px);
+        }
+        .stage h1{
+          margin:0;text-align:center;font-family:${serif};font-weight:800;
+          font-size:clamp(1.7rem,5.6vw,2.5rem);line-height:1.05;letter-spacing:-.02em;
+        }
+        .stage p{
+          margin:0;text-align:center;font-weight:300;font-size:.92rem;
+          color:${creamInk}a6;max-width:34ch;line-height:1.55;
+        }
+      `}</style>
+
+      <header className="gbar">
+        <Link href="/" className="gbrand">
+          <img src="/bunii-logo.jpg" alt="" />
+          <span>Bunii</span>
         </Link>
-        <Link
-          href="/"
-          style={{
-            fontFamily: sans,
-            fontSize: "0.62rem",
-            fontWeight: 600,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            color: "rgba(255,255,255,0.5)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "6px",
-            padding: "7px 12px",
-          }}
-        >
-          ← Back
+        <Link href="/" className="gback">
+          Back
         </Link>
       </header>
 
-      <div
-        style={{
-          padding: "28px 16px 48px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          opacity: ready ? 1 : 0,
-          transition: "opacity 0.4s ease",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: sans,
-            fontSize: "0.58rem",
-            letterSpacing: "0.26em",
-            textTransform: "uppercase",
-            color: gold,
-            marginBottom: "6px",
-          }}
-        >
-          BuniiList Mini-Game
-        </p>
-        <h1 style={{ fontFamily: serif, fontSize: "clamp(1.6rem,6vw,2.2rem)", fontWeight: 700, color: "#fff", margin: "0 0 20px", textAlign: "center" }}>
-          Grab a Bunii, lock a spot.
-        </h1>
-        <ClawMachine />
-      </div>
+      <main className="stage">
+        <h1>Catch a Bunii.</h1>
+        <p>Sixty seconds. The gold ones are worth holding out for.</p>
+        <BuniiDrop />
+      </main>
     </div>
   );
 }
