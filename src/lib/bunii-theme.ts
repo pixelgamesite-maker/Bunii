@@ -1,9 +1,8 @@
 // Design tokens for Bunii.
 //
-// Direction: warm dark, wide banner cards, quiet premium. The background is a
-// deep espresso rather than a neutral black, so the warm art sits on it
-// without looking pasted onto a tech site. One muted gold hairline is the
-// only accent.
+// Direction: dark purple, wide banner cards, quiet premium. The page sits on a
+// deep violet; the header is a lifted, lighter violet so it reads as a bar
+// without needing a border. One muted gold hairline is the only accent.
 //
 // Legacy names (bg, bgDeep, panel, gold, mint, yellow, ink) are kept at the
 // bottom so game.tsx keeps compiling.
@@ -16,23 +15,23 @@ export const serif = "'Bricolage Grotesque', 'Outfit', system-ui, sans-serif";
 // UI and body: clean geometric sans, light weights for small text.
 export const sans = "'Outfit', system-ui, sans-serif";
 
-/* ── Warm dark palette ──────────────────────────────────────────── */
+/* ── Dark purple palette ────────────────────────────────────────── */
 
-export const nightTop = "#221814"; // lifted top of the wash
-export const night = "#16100D"; // base surface
-export const nightDeep = "#0C0807"; // floor of the wash
-export const surface = "#241A16"; // raised panels, header pill
-export const creamInk = "#F6EDE5"; // primary text
+export const plum = "#1B1030"; // base surface
+export const plumDeep = "#100821"; // floor of the wash
+export const plumLift = "#2C1B4A"; // header bar, raised areas
+export const surface = "#35235A"; // pill and panel faces
+export const creamInk = "#F3EDF8"; // primary text
 export const goldLine = "#C29A5B"; // hairline and accent
-export const emberGlow = "#8A4A33"; // warm bloom in the background
+export const violetGlow = "#7A4BC4"; // bloom in the background
 
 /* ── Legacy names (game.tsx) ────────────────────────────────────── */
 
-export const bg = night;
-export const bgDeep = nightDeep;
+export const bg = plum;
+export const bgDeep = plumDeep;
 export const panel = surface;
 export const gold = goldLine;
 export const goldLight = "#E0BC85";
-export const mint = emberGlow;
+export const mint = violetGlow;
 export const yellow = "#D8A86A";
 export const ink = creamInk;
