@@ -1,6 +1,17 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
-import { FONT_LINK, blush, goldLine, inkRose, roseDeep, roseLight, roseMid, sans, serif } from "@/lib/bunii-theme";
+import {
+  FONT_LINK,
+  creamInk,
+  emberGlow,
+  goldLine,
+  night,
+  nightDeep,
+  nightTop,
+  sans,
+  serif,
+  surface,
+} from "@/lib/bunii-theme";
 import { X_URL } from "@/lib/bunii-data";
 
 export default function Home() {
@@ -15,20 +26,20 @@ export default function Home() {
     <div className="page">
       <style>{`
         *{box-sizing:border-box;}
-        body{margin:0;}
+        body{margin:0;background:${night};}
         a{color:inherit;text-decoration:none;}
-        ::selection{background:${inkRose};color:${blush};}
+        ::selection{background:${goldLine};color:${nightDeep};}
 
         .page{
           min-height:100svh;
           display:flex;
           flex-direction:column;
           font-family:${sans};
-          color:${inkRose};
+          color:${creamInk};
           background:
-            radial-gradient(120% 90% at 16% 4%, ${roseLight} 0%, transparent 60%),
-            radial-gradient(110% 85% at 92% 98%, ${roseDeep} 0%, transparent 64%),
-            linear-gradient(166deg, ${roseLight} 0%, ${roseMid} 54%, ${roseDeep} 100%);
+            radial-gradient(90% 70% at 18% 0%, ${nightTop} 0%, transparent 62%),
+            radial-gradient(70% 55% at 88% 96%, ${emberGlow}2e 0%, transparent 68%),
+            linear-gradient(170deg, ${night} 0%, ${night} 45%, ${nightDeep} 100%);
         }
 
         /* ── header ── */
@@ -39,27 +50,28 @@ export default function Home() {
           padding:18px clamp(18px,4vw,40px);
           backdrop-filter:blur(14px);
           -webkit-backdrop-filter:blur(14px);
-          background:linear-gradient(${roseLight}cc, ${roseLight}66);
+          background:linear-gradient(${night}e6, ${night}66);
         }
         .brand{display:flex;align-items:center;gap:13px;}
         .brand img{
           width:44px;height:44px;border-radius:50%;object-fit:cover;
-          box-shadow:0 0 0 1px ${goldLine}66, 0 6px 18px -8px rgba(56,29,27,.6);
+          box-shadow:0 0 0 1px ${goldLine}59, 0 8px 22px -10px #000;
         }
         .brand span{
           font-family:${serif};
           font-weight:800;
           font-size:1.6rem;
           letter-spacing:-.015em;
+          color:${creamInk};
         }
 
         .nav{
           display:flex;align-items:center;gap:6px;
-          background:${blush}d9;
-          border:1px solid ${goldLine}33;
+          background:${surface}cc;
+          border:1px solid ${goldLine}2e;
           border-radius:999px;
           padding:5px;
-          box-shadow:0 10px 30px -18px rgba(56,29,27,.7);
+          box-shadow:inset 0 1px 0 ${creamInk}0f, 0 14px 34px -22px #000;
         }
         .nav a,.nav span{
           font-size:.8rem;font-weight:500;letter-spacing:.1em;
@@ -67,8 +79,9 @@ export default function Home() {
           padding:10px 18px;border-radius:999px;
           transition:background .25s ease,color .25s ease;
         }
-        .nav a:hover,.nav a:focus-visible{background:${inkRose};color:${blush};outline:none;}
-        .nav span{color:${inkRose}4d;cursor:default;}
+        .nav a{color:${creamInk}d9;}
+        .nav a:hover,.nav a:focus-visible{background:${goldLine};color:${nightDeep};outline:none;}
+        .nav span{color:${creamInk}42;cursor:default;}
 
         /* ── banners ── */
         .deck{
@@ -89,8 +102,11 @@ export default function Home() {
           height:clamp(190px,27vh,270px);
           border-radius:22px;
           overflow:hidden;
-          background:${roseMid};
-          box-shadow:0 1px 0 ${goldLine}40, 0 30px 60px -28px rgba(56,29,27,.65);
+          background:${surface};
+          box-shadow:
+            inset 0 0 0 1px ${goldLine}33,
+            0 34px 64px -30px #000,
+            0 0 0 1px ${nightDeep};
           animation:settle .8s cubic-bezier(.2,.7,.25,1) both;
           transition:transform .55s cubic-bezier(.2,.7,.25,1), box-shadow .55s ease;
         }
@@ -103,7 +119,7 @@ export default function Home() {
         }
         .banner::after{
           content:"";position:absolute;inset:0;
-          background:linear-gradient(180deg, rgba(40,18,16,.12) 0%, rgba(40,18,16,.52) 100%);
+          background:linear-gradient(180deg, ${nightDeep}40 0%, ${nightDeep}b3 100%);
         }
 
         .banner__label{
@@ -119,7 +135,7 @@ export default function Home() {
           line-height:1;
           letter-spacing:-.02em;
           color:#fff;
-          text-shadow:0 2px 24px rgba(40,18,16,.5);
+          text-shadow:0 2px 30px ${nightDeep};
         }
         .banner__label p{
           margin:0;
@@ -127,20 +143,23 @@ export default function Home() {
           font-weight:300;
           letter-spacing:.14em;
           text-transform:uppercase;
-          color:#ffffffd0;
+          color:${creamInk}c4;
         }
 
         .banner--live:hover,.banner--live:focus-visible{
           transform:translateY(-5px);
-          box-shadow:0 1px 0 ${goldLine}80, 0 40px 74px -30px rgba(56,29,27,.75);
+          box-shadow:
+            inset 0 0 0 1px ${goldLine}80,
+            0 44px 78px -32px #000,
+            0 0 0 1px ${nightDeep};
           outline:none;
         }
         .banner--live:hover img,.banner--live:focus-visible img{transform:scale(1.05);}
 
-        .banner--soon img{filter:saturate(.7) brightness(.9);}
-        .banner--soon .banner__label h2{color:#fff;opacity:.94;}
+        .banner--soon img{filter:saturate(.55) brightness(.72);}
+        .banner--soon .banner__label p{color:${goldLine};}
 
-        a:focus-visible{outline:2px solid ${blush};outline-offset:4px;}
+        a:focus-visible{outline:2px solid ${goldLine};outline-offset:4px;}
 
         @keyframes settle{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @media (prefers-reduced-motion:reduce){
