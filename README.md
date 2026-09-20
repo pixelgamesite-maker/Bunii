@@ -1,4 +1,4 @@
-# Bunii rebrand — what changed and what's still a placeholder
+# Bunii structure
 
 ## File structure
 ```
