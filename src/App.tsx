@@ -2,6 +2,7 @@ import { Router as WouterRouter, Route, Switch } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
+import Game from "@/pages/game";
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <WouterRouter>
           <Switch>
             <Route path="/" component={Home} />
+            <Route path="/game" component={Game} />
             <Route>
               <div
                 style={{
@@ -22,7 +24,7 @@ function App() {
                   fontFamily: "'Cormorant Garamond', Georgia, serif",
                   fontWeight: 700,
                   fontSize: "2rem",
-                  color: "#c9a84c",
+                  color: "#6fa8c4",
                 }}
               >
                 404 — NOT FOUND
