@@ -1,9 +1,8 @@
 // Arcade gate: the one-time task list a visitor clears before the game opens.
 //
 // localStorage decides what the visitor SEES (cleared visitors skip the tasks).
-// Supabase holds the actual record. The two are kept in step, but storage is
-// never trusted as the source of truth — if it's unavailable the visitor just
-// gets asked again.
+// Supabase holds the record. Storage is never trusted as the source of truth —
+// if it's unavailable the visitor is simply asked again.
 
 import { supabase } from "@/lib/supabase";
 
@@ -68,6 +67,15 @@ export function isXStatusUrl(raw: string) {
 }
 
 /**
+ * A request that never reached the server has no Postgres code — that's
+ * almost always an ad blocker or wallet extension eating the call, so it
+ * gets its own message rather than a vague "try again".
+ */
+function isNetworkError(error: unknown) {
+  return !(error as { code?: string })?.code;
+}
+
+/**
  * Write the gate entry to `bunii` and mark this device as cleared.
  * A handle that already exists counts as success — they're registered,
  * which is the whole point.
@@ -78,7 +86,13 @@ export async function recordEntry(handle: string, commentUrl: string): Promise<{
   const { error } = await supabase.from("bunii").insert([{ handle: clean, comment_url: commentUrl.trim() }]);
 
   if (error && (error as { code?: string }).code !== DUPLICATE) {
-    return { ok: false, message: "Couldn't save your entry. Check your connection and try again." };
+    console.error("bunii entry failed:", error);
+    return {
+      ok: false,
+      message: isNetworkError(error)
+        ? "Couldn't reach the server. An ad blocker or wallet extension may be blocking it — try turning extensions off for this site."
+        : "Couldn't save your entry. Try again.",
+    };
   }
 
   saveGate(clean, commentUrl);
@@ -87,8 +101,14 @@ export async function recordEntry(handle: string, commentUrl: string): Promise<{
 
 /**
  * Fill in the wallet on this player's row after a perfect run.
- * The RLS policy only allows an update where wallet is still null,
- * so a claimed spot can't be overwritten.
+ *
+ * `ilike` with no wildcards is an exact case-insensitive match, which lines
+ * up with the lower(handle) unique index — @Baron and @baron are one person.
+ *
+ * The RLS policy only allows an update where wallet is still null, so a
+ * claimed spot can't be overwritten. The `.select("id")` needs anon to have
+ * a column-level grant on id (see bunii-table.sql) or it comes back empty
+ * even on a successful write.
  */
 export async function claimWallet(
   wallet: string,
@@ -108,19 +128,25 @@ export async function claimWallet(
       average_ms: averageMs,
       claimed_at: new Date().toISOString(),
     })
-    .eq("handle", gate.handle)
+    .ilike("handle", gate.handle)
     .is("wallet", null)
     .select("id");
 
   if (error) {
+    console.error("bunii claim failed:", error);
     if ((error as { code?: string }).code === DUPLICATE) {
       return { ok: false, message: "That wallet already holds a spot." };
     }
-    return { ok: false, message: "Something went wrong. Try again." };
+    return {
+      ok: false,
+      message: isNetworkError(error)
+        ? "Couldn't reach the server. An ad blocker or wallet extension may be blocking it."
+        : "Something went wrong. Try again.",
+    };
   }
 
   if (!data || data.length === 0) {
-    return { ok: false, message: `@${gate.handle} has already claimed a spot.` };
+    return { ok: false, message: `No open spot found for @${gate.handle}. It may already be claimed.` };
   }
 
   return { ok: true };
