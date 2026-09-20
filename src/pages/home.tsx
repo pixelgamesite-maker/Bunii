@@ -60,7 +60,7 @@ export default function Home() {
         }}
       >
         <a href="#home" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-          <img src="/bunii1.png" style={{ width: "30px", height: "30px", borderRadius: "6px", objectFit: "cover" }} alt="" />
+          <img src="/bunii-logo.jpg" style={{ width: "30px", height: "30px", borderRadius: "6px", objectFit: "cover" }} alt="" />
           <span style={{ fontFamily: serif, fontSize: "1.05rem", fontWeight: 700, color: "#fff", letterSpacing: "0.1em" }}>BUNII</span>
         </a>
 
@@ -439,7 +439,7 @@ export default function Home() {
       <Divider />
 
       <footer style={{ padding: "60px 24px 40px", textAlign: "center" }}>
-        <img src="/bunii1.png" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover", marginBottom: "16px" }} alt="" />
+        <img src="/bunii-logo.jpg" style={{ width: "44px", height: "44px", borderRadius: "8px", objectFit: "cover", marginBottom: "16px" }} alt="" />
         <h3 style={{ fontFamily: serif, fontSize: "1.4rem", fontWeight: 700, color: "#fff", margin: "0 0 6px", letterSpacing: "0.08em" }}>BUNII</h3>
         <p style={{ fontFamily: serif, fontStyle: "italic", fontSize: "0.88rem", color: "rgba(255,255,255,0.3)", margin: "0 0 24px", lineHeight: 1.7 }}>
           Cute. Bold. A little bit of trouble.
