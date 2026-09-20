@@ -102,13 +102,19 @@ export async function recordEntry(handle: string, commentUrl: string): Promise<{
 /**
  * Fill in the wallet on this player's row after a perfect run.
  *
- * `ilike` with no wildcards is an exact case-insensitive match, which lines
- * up with the lower(handle) unique index — @Baron and @baron are one person.
+ * Two things to know about the query below.
  *
- * The RLS policy only allows an update where wallet is still null, so a
- * claimed spot can't be overwritten. The `.select("id")` needs anon to have
- * a column-level grant on id (see bunii-table.sql) or it comes back empty
- * even on a successful write.
+ * 1. `ilike` with no wildcards is an exact case-insensitive match, lining up
+ *    with the lower(handle) unique index — @Baron and @baron are one person.
+ *
+ * 2. There is deliberately no `.is("wallet", null)` filter. Naming a column
+ *    in a WHERE clause requires SELECT privilege on it, and anon must never
+ *    be able to read `wallet`. The guard is not lost: the RLS policy's
+ *    `using (wallet is null)` hides already-claimed rows from the update, so
+ *    a claimed spot still can't be overwritten and still comes back as zero
+ *    rows affected.
+ *
+ * `handle` and `id` do need a column-level grant — see bunii-grant-fix.sql.
  */
 export async function claimWallet(
   wallet: string,
@@ -129,7 +135,6 @@ export async function claimWallet(
       claimed_at: new Date().toISOString(),
     })
     .ilike("handle", gate.handle)
-    .is("wallet", null)
     .select("id");
 
   if (error) {
