@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties, type FocusEvent } from "react";
-import { gold, goldLight, sans, serif } from "@/lib/bunii-theme";
+import { bgDeep, gold, goldLight, sans, serif } from "@/lib/bunii-theme";
 import { PINNED_TWEET_URL } from "@/lib/bunii-data";
 import { supabase } from "@/lib/supabase";
 import { isValidEvm, isValidUrl } from "@/lib/validators";
@@ -151,7 +151,7 @@ export function WhitelistModal({ open, onClose }: { open: boolean; onClose: () =
           maxWidth: "460px",
           maxHeight: "94vh",
           overflowY: "auto",
-          background: "#0d0b07",
+          background: bgDeep,
           border: `1px solid ${gold}22`,
           borderRadius: "16px",
           padding: "28px 22px 24px",
@@ -199,7 +199,7 @@ export function WhitelistModal({ open, onClose }: { open: boolean; onClose: () =
               Already Applied
             </p>
             <h2 style={{ fontFamily: serif, fontSize: "1.5rem", fontWeight: 700, color: "#fff", margin: "0 0 10px" }}>Application Received.</h2>
-            <p style={{ fontFamily: serif, fontStyle: "italic", fontSize: "0.9rem", color: "rgba(255,255,255,0.38)", margin: 0, lineHeight: 1.6 }}>
+            <p style={{ fontFamily: serif, fontSize: "0.9rem", color: "rgba(255,255,255,0.38)", margin: 0, lineHeight: 1.6 }}>
               Your spot has been saved. Selected wallets will be added before mint.
             </p>
             <button
@@ -246,7 +246,7 @@ export function WhitelistModal({ open, onClose }: { open: boolean; onClose: () =
               Application Sent
             </p>
             <h2 style={{ fontFamily: serif, fontSize: "1.5rem", fontWeight: 700, color: "#fff", margin: "0 0 10px" }}>You Are Under Review.</h2>
-            <p style={{ fontFamily: serif, fontStyle: "italic", fontSize: "0.9rem", color: "rgba(255,255,255,0.38)", margin: 0, lineHeight: 1.6 }}>
+            <p style={{ fontFamily: serif, fontSize: "0.9rem", color: "rgba(255,255,255,0.38)", margin: 0, lineHeight: 1.6 }}>
               Selected wallets will be added before mint.
             </p>
             <button
@@ -278,7 +278,7 @@ export function WhitelistModal({ open, onClose }: { open: boolean; onClose: () =
               <h2 style={{ fontFamily: serif, fontSize: "1.5rem", fontWeight: 700, color: "#fff", margin: "0 0 4px", letterSpacing: "0.02em" }}>
                 Claim Your Spot
               </h2>
-              <p style={{ fontFamily: serif, fontStyle: "italic", fontSize: "0.82rem", color: "rgba(255,255,255,0.35)", margin: "0 0 14px", lineHeight: 1.5 }}>
+              <p style={{ fontFamily: serif, fontSize: "0.82rem", color: "rgba(255,255,255,0.35)", margin: "0 0 14px", lineHeight: 1.5 }}>
                 Complete the missions and submit your wallet for BuniiList review.
               </p>
               <div style={{ height: "2px", background: `${gold}18`, borderRadius: "2px", overflow: "hidden" }}>
@@ -358,7 +358,7 @@ export function WhitelistModal({ open, onClose }: { open: boolean; onClose: () =
                   setTimeout(() => setTasks((p) => ({ ...p, like: true })), 800);
                 }}
               >
-                <p style={{ fontFamily: serif, fontStyle: "italic", fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.5 }}>
+                <p style={{ fontFamily: serif, fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.5 }}>
                   {c2 ? "Like & comment confirmed." : "Like the pinned post and tag 2 friends in the comments on X."}
                 </p>
                 {c2 && <p style={{ fontFamily: sans, fontSize: "0.6rem", color: gold, margin: "8px 0 0" }}>Missions done</p>}
@@ -378,7 +378,7 @@ export function WhitelistModal({ open, onClose }: { open: boolean; onClose: () =
               >
                 {!c3 ? (
                   <>
-                    <p style={{ fontFamily: serif, fontStyle: "italic", fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.5 }}>
+                    <p style={{ fontFamily: serif, fontSize: "0.78rem", color: "rgba(255,255,255,0.5)", margin: 0, lineHeight: 1.5 }}>
                       Quote the pinned tweet on X with "BUNII" and tag 2 friends. Then paste your quote link below.
                     </p>
                     <p style={{ margin: "8px 0 0", fontFamily: sans, fontSize: "0.62rem", color: `${gold}88`, letterSpacing: "0.1em", textTransform: "uppercase" }}>
