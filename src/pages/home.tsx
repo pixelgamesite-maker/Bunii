@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link } from "wouter";
 import { FONT_LINK, blush, goldLine, inkRose, roseDeep, roseLight, roseMid, sans, serif } from "@/lib/bunii-theme";
+import { X_URL } from "@/lib/bunii-data";
 
 export default function Home() {
   useEffect(() => {
@@ -22,137 +23,163 @@ export default function Home() {
           min-height:100svh;
           display:flex;
           flex-direction:column;
-          align-items:center;
-          justify-content:center;
-          gap:clamp(36px,7vh,72px);
-          padding:clamp(32px,6vh,72px) 24px;
           font-family:${sans};
           color:${inkRose};
           background:
-            radial-gradient(120% 90% at 18% 8%, ${roseLight} 0%, transparent 58%),
-            radial-gradient(110% 80% at 88% 96%, ${roseDeep} 0%, transparent 62%),
-            linear-gradient(168deg, ${roseLight} 0%, ${roseMid} 52%, ${roseDeep} 100%);
+            radial-gradient(120% 90% at 16% 4%, ${roseLight} 0%, transparent 60%),
+            radial-gradient(110% 85% at 92% 98%, ${roseDeep} 0%, transparent 64%),
+            linear-gradient(166deg, ${roseLight} 0%, ${roseMid} 54%, ${roseDeep} 100%);
         }
 
-        .mark{
-          display:flex;
-          align-items:center;
-          gap:12px;
-          animation:settle .8s cubic-bezier(.2,.7,.25,1) both;
+        /* ── header ── */
+        .bar{
+          position:sticky;top:0;z-index:40;
+          display:flex;align-items:center;justify-content:space-between;
+          gap:20px;flex-wrap:wrap;
+          padding:18px clamp(18px,4vw,40px);
+          backdrop-filter:blur(14px);
+          -webkit-backdrop-filter:blur(14px);
+          background:linear-gradient(${roseLight}cc, ${roseLight}66);
         }
-        .mark img{
-          width:34px;height:34px;border-radius:50%;object-fit:cover;
-          box-shadow:0 0 0 1px ${goldLine}55;
+        .brand{display:flex;align-items:center;gap:13px;}
+        .brand img{
+          width:44px;height:44px;border-radius:50%;object-fit:cover;
+          box-shadow:0 0 0 1px ${goldLine}66, 0 6px 18px -8px rgba(56,29,27,.6);
         }
-        .mark span{
+        .brand span{
           font-family:${serif};
-          font-size:1.5rem;
-          letter-spacing:.06em;
+          font-weight:800;
+          font-size:1.6rem;
+          letter-spacing:-.015em;
         }
 
+        .nav{
+          display:flex;align-items:center;gap:6px;
+          background:${blush}d9;
+          border:1px solid ${goldLine}33;
+          border-radius:999px;
+          padding:5px;
+          box-shadow:0 10px 30px -18px rgba(56,29,27,.7);
+        }
+        .nav a,.nav span{
+          font-size:.8rem;font-weight:500;letter-spacing:.1em;
+          text-transform:uppercase;
+          padding:10px 18px;border-radius:999px;
+          transition:background .25s ease,color .25s ease;
+        }
+        .nav a:hover,.nav a:focus-visible{background:${inkRose};color:${blush};outline:none;}
+        .nav span{color:${inkRose}4d;cursor:default;}
+
+        /* ── banners ── */
         .deck{
-          display:grid;
-          grid-template-columns:repeat(auto-fit,minmax(272px,1fr));
-          gap:clamp(20px,3vw,32px);
+          flex:1;
           width:100%;
-          max-width:860px;
-        }
-
-        .card{
-          position:relative;
+          max-width:1120px;
+          margin:0 auto;
           display:flex;
           flex-direction:column;
-          border-radius:4px;
+          justify-content:center;
+          gap:clamp(18px,2.6vw,26px);
+          padding:clamp(28px,6vh,64px) clamp(18px,4vw,40px) clamp(40px,8vh,80px);
+        }
+
+        .banner{
+          position:relative;
+          display:block;
+          height:clamp(190px,27vh,270px);
+          border-radius:22px;
           overflow:hidden;
-          background:${blush};
-          box-shadow:0 1px 0 ${goldLine}40, 0 24px 60px -24px rgba(59,31,28,.45);
-          animation:settle .9s cubic-bezier(.2,.7,.25,1) both;
-          transition:transform .5s cubic-bezier(.2,.7,.25,1), box-shadow .5s ease;
+          background:${roseMid};
+          box-shadow:0 1px 0 ${goldLine}40, 0 30px 60px -28px rgba(56,29,27,.65);
+          animation:settle .8s cubic-bezier(.2,.7,.25,1) both;
+          transition:transform .55s cubic-bezier(.2,.7,.25,1), box-shadow .55s ease;
         }
-        .card:nth-child(1){animation-delay:.08s;}
-        .card:nth-child(2){animation-delay:.16s;}
+        .banner:nth-child(2){animation-delay:.1s;}
 
-        .card__frame{overflow:hidden;background:${roseMid};}
-        .card__frame img{
-          display:block;width:100%;height:100%;
-          aspect-ratio:5/4;object-fit:cover;
-          transition:transform .9s cubic-bezier(.2,.7,.25,1);
+        .banner img{
+          position:absolute;inset:0;
+          width:100%;height:100%;object-fit:cover;
+          transition:transform 1s cubic-bezier(.2,.7,.25,1);
+        }
+        .banner::after{
+          content:"";position:absolute;inset:0;
+          background:linear-gradient(180deg, rgba(40,18,16,.12) 0%, rgba(40,18,16,.52) 100%);
         }
 
-        .card--live:hover,.card--live:focus-visible{
-          transform:translateY(-6px);
-          box-shadow:0 1px 0 ${goldLine}80, 0 36px 70px -26px rgba(59,31,28,.55);
+        .banner__label{
+          position:absolute;inset:0;z-index:2;
+          display:flex;flex-direction:column;align-items:center;justify-content:center;
+          gap:8px;padding:0 24px;text-align:center;
+        }
+        .banner__label h1,.banner__label h2{
+          margin:0;
+          font-family:${serif};
+          font-weight:800;
+          font-size:clamp(2.1rem,6.4vw,3.5rem);
+          line-height:1;
+          letter-spacing:-.02em;
+          color:#fff;
+          text-shadow:0 2px 24px rgba(40,18,16,.5);
+        }
+        .banner__label p{
+          margin:0;
+          font-size:clamp(.8rem,1.6vw,.95rem);
+          font-weight:300;
+          letter-spacing:.14em;
+          text-transform:uppercase;
+          color:#ffffffd0;
+        }
+
+        .banner--live:hover,.banner--live:focus-visible{
+          transform:translateY(-5px);
+          box-shadow:0 1px 0 ${goldLine}80, 0 40px 74px -30px rgba(56,29,27,.75);
           outline:none;
         }
-        .card--live:hover .card__frame img,
-        .card--live:focus-visible .card__frame img{transform:scale(1.04);}
+        .banner--live:hover img,.banner--live:focus-visible img{transform:scale(1.05);}
 
-        .card--soon .card__frame img{filter:saturate(.72) brightness(.97);}
+        .banner--soon img{filter:saturate(.7) brightness(.9);}
+        .banner--soon .banner__label h2{color:#fff;opacity:.94;}
 
-        .card__body{
-          padding:22px 24px 26px;
-          border-top:1px solid ${goldLine}33;
-        }
-        .card__title{
-          font-family:${serif};
-          font-size:1.65rem;
-          line-height:1.1;
-          margin:0 0 6px;
-          letter-spacing:.01em;
-        }
-        .card__sub{
-          margin:0;
-          font-size:.92rem;
-          font-weight:300;
-          line-height:1.55;
-          color:${inkRose}a6;
-        }
-        .card__meta{
-          display:block;
-          margin-top:18px;
-          font-size:.7rem;
-          font-weight:500;
-          letter-spacing:.22em;
-          color:${goldLine};
-        }
-        .card--soon .card__meta{color:${inkRose}59;}
+        a:focus-visible{outline:2px solid ${blush};outline-offset:4px;}
 
-        a.card:focus-visible{outline:1px solid ${inkRose};outline-offset:6px;}
-
-        @keyframes settle{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+        @keyframes settle{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
         @media (prefers-reduced-motion:reduce){
           *{animation:none!important;transition:none!important;}
         }
       `}</style>
 
-      <div className="mark">
-        <img src="/bunii-logo.jpg" alt="" />
-        <span>Bunii</span>
-      </div>
+      <header className="bar">
+        <div className="brand">
+          <img src="/bunii-logo.jpg" alt="" />
+          <span>Bunii</span>
+        </div>
 
-      <div className="deck">
-        <Link href="/game" className="card card--live">
-          <div className="card__frame">
-            <img src="/bun-button.jpg" alt="" />
-          </div>
-          <div className="card__body">
-            <h1 className="card__title">The Grab Game</h1>
-            <p className="card__sub">Work the claw. See what you pull out.</p>
-            <span className="card__meta">ENTER</span>
+        <nav className="nav">
+          <Link href="/game">Game</Link>
+          <span>Buniverse</span>
+          <a href={X_URL} target="_blank" rel="noopener noreferrer">
+            X
+          </a>
+        </nav>
+      </header>
+
+      <main className="deck">
+        <Link href="/game" className="banner banner--live">
+          <img src="/bun-button.jpg" alt="" />
+          <div className="banner__label">
+            <h1>THE GRAB GAME</h1>
+            <p>Play now</p>
           </div>
         </Link>
 
-        <div className="card card--soon">
-          <div className="card__frame">
-            <img src="/backgroung-bunii.jpg" alt="" />
-          </div>
-          <div className="card__body">
-            <h2 className="card__title">The Buniverse</h2>
-            <p className="card__sub">For the true believers.</p>
-            <span className="card__meta">COMING SOON</span>
+        <div className="banner banner--soon" aria-label="The Buniverse, coming soon">
+          <img src="/backgroung-bunii.jpg" alt="" />
+          <div className="banner__label">
+            <h2>THE BUNIVERSE</h2>
+            <p>For the true believers</p>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
