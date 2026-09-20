@@ -27,7 +27,7 @@ export default function Game() {
         }}
       >
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <img src="/bunii1.png" style={{ width: "26px", height: "26px", borderRadius: "6px", objectFit: "cover" }} alt="" />
+          <img src="/bunii-logo.jpg" style={{ width: "26px", height: "26px", borderRadius: "6px", objectFit: "cover" }} alt="" />
           <span style={{ fontFamily: serif, fontSize: "0.95rem", fontWeight: 700, color: "#fff", letterSpacing: "0.08em" }}>BUNII</span>
         </Link>
         <Link
