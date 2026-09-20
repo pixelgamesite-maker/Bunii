@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { creamInk, goldLine, plum, plumDeep, plumLift, sans, serif, surface, violetGlow } from "@/lib/bunii-theme";
-import { supabase } from "@/lib/supabase";
+import { claimWallet } from "@/lib/bunii-gate";
 import { isValidEvm } from "@/lib/validators";
 
 /* ── tuning ─────────────────────────────────────────────────────── */
@@ -15,7 +15,7 @@ const FALL_LAST = 520;
 const GAP_MIN = 650;
 const GAP_MAX = 2100;
 
-// Chance a drop brings a second bun with it, once two are still hanging.
+// Chance a drop brings a second bun with it, while two still hang.
 const DOUBLE_CHANCE = 0.38;
 const DOUBLE_OFFSET_MIN = 110;
 const DOUBLE_OFFSET_MAX = 380;
@@ -151,7 +151,7 @@ export function BuniiReaction() {
       const s = g.current;
 
       if (s.phase === "playing") {
-        // a queued second bun from a double drop
+        // the second bun of a double drop
         if (s.queued && now >= s.queued.at) {
           if (s.slots[s.queued.index].state === "hung") launch(s.queued.index, now);
           s.queued = null;
@@ -195,6 +195,7 @@ export function BuniiReaction() {
             continue;
           }
 
+          // ease in — slow release, then real speed
           const eased = t * t * (1.9 - 0.9 * t);
           if (el) el.style.transform = `translate(-50%, ${eased * s.fallHeight}px) scale(1)`;
         }
@@ -236,26 +237,21 @@ export function BuniiReaction() {
       setClaimErr("That doesn't look like a valid EVM address (0x + 40 characters).");
       return;
     }
+
     setClaimErr("");
     setSending(true);
 
     const list = g.current.reactions;
-    const { error } = await supabase.from("bunii_gtd").insert([
-      {
-        wallet: wallet.trim(),
-        fastest_ms: Math.min(...list),
-        average_ms: Math.round(list.reduce((a, b) => a + b, 0) / list.length),
-      },
-    ]);
+    const res = await claimWallet(
+      wallet,
+      Math.min(...list),
+      Math.round(list.reduce((a, b) => a + b, 0) / list.length),
+    );
 
     setSending(false);
 
-    if (error) {
-      if ((error as { code?: string }).code === "23505") {
-        setClaimErr("This wallet already has a spot.");
-      } else {
-        setClaimErr("Something went wrong. Try again.");
-      }
+    if (!res.ok) {
+      setClaimErr(res.message ?? "Something went wrong. Try again.");
       return;
     }
 
@@ -291,8 +287,8 @@ export function BuniiReaction() {
         .cell.ms b{color:${goldLine};}
 
         .pips{display:flex;gap:7px;align-items:center;height:24px;}
-        .pip{width:12px;height:12px;border-radius:50%;
-          background:${creamInk}1f;transition:background .3s ease,box-shadow .3s ease;}
+        .pip{width:12px;height:12px;border-radius:50%;background:${creamInk}1f;
+          transition:background .3s ease,box-shadow .3s ease;}
         .pip.on{background:${goldLine};box-shadow:0 0 12px ${goldLine}aa;}
 
         .stage{
@@ -355,8 +351,8 @@ export function BuniiReaction() {
           color:${plumDeep};background:${goldLine};border:none;border-radius:999px;
           padding:14px 34px;cursor:pointer;transition:transform .2s ease,filter .2s ease;
         }
-        .veil button:hover{transform:translateY(-2px);filter:brightness(1.08);}
-        .veil button:disabled{opacity:.5;cursor:default;transform:none;}
+        .veil button:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08);}
+        .veil button:disabled{opacity:.5;cursor:default;}
 
         .gtd{font-size:.62rem;letter-spacing:.26em;text-transform:uppercase;color:${goldLine};margin:0;}
 
@@ -368,6 +364,7 @@ export function BuniiReaction() {
           transition:border-color .2s ease;
         }
         .claim input:focus{border-color:${goldLine};}
+        .claim input::placeholder{color:${creamInk}40;}
         .claim button{margin-top:0;padding:13px 24px;}
         .err{color:#E88A6A;font-size:.8rem;margin:0;}
         .fine{font-size:.72rem;color:${creamInk}59;margin:0;max-width:34ch;line-height:1.5;}
@@ -445,9 +442,7 @@ export function BuniiReaction() {
               <p>Your wallet is locked in. Nothing else to do.</p>
             ) : (
               <>
-                <p>
-                  {avg !== null ? `${avg}ms average. ` : ""}Drop an EVM address to hold your spot.
-                </p>
+                <p>{avg !== null ? `${avg}ms average. ` : ""}Drop an EVM address to hold your spot.</p>
                 <div className="claim">
                   <input
                     type="text"
