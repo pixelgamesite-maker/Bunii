@@ -1,61 +1,20 @@
-// Content constants for the Bunii site.
-// TODO(confirm with client): supply cap, chain, mint price/date, OpenSea
-// link, and the real pinned-tweet URL below are placeholders based on
-// what's been shared so far (free mint, first 1,000 wallets, X @bunionrh).
+// Content for the Bunii site — trimmed to what's actually confirmed.
+// No invented "classes/traits/systems/token/roadmap" lore copied from a
+// template; add sections back here only once there's real content for them.
 
-export const BUNII_IMAGES = [
-  "/bunii1.png",
-  "/bunii2.png",
-  "/bunii3.png",
-  "/bunii4.png",
-  "/bunii5.png",
-];
+export const BUNII_IMAGES = ["/bunii1.png", "/bunii2.png", "/bunii3.png", "/bunii4.png", "/bunii5.png"];
 
-// Used for the "classes" row — reuses the same 5 uploaded images.
-export const CLASS_BUNIIS = BUNII_IMAGES;
-
-export const CLASSES = [
-  { name: "Regulars", desc: "Clean, simple, and easy to love." },
-  { name: "Cool Ones", desc: "Extra style, stronger attitude, cleaner presence." },
-  { name: "Wild Ones", desc: "Loud traits and chaotic combinations." },
-  { name: "Bosses", desc: "Harder to find. Easier to notice." },
-  { name: "Originals", desc: "The rarest Buniis, with a deeper connection to $BUNI." },
-];
-
-export const TRAITS = [
-  "Hair",
-  "Outfits",
-  "Accessories",
-  "Moods",
-  "Colors",
-  "Body details",
-  "Backgrounds",
-  "Special features",
-];
-
-export const SYSTEMS = [
-  { name: "The Warren", desc: "Upgrade and experiment with your Buniis." },
-  { name: "The Arena", desc: "Games, battles, leaderboards, and rewards." },
-  { name: "The Burrow", desc: "Holder games, raffles, missions, and community events." },
-  { name: "The Bunii Machine", desc: "Use $BUNI for spins, rerolls, mystery outcomes, and surprise rewards." },
-];
-
-export const ROADMAP = [
-  { phase: "Phase I", title: "BuniiList Opens", desc: "Applications, missions, and early access review begin." },
-  { phase: "Phase II", title: "Free Mint Opens", desc: "Selected BuniiList wallets mint for free — first 1,000 wallets." },
-  { phase: "Phase III", title: "Reveal", desc: "Buniis reveal with traits, classes, and rarity." },
-  { phase: "Phase IV", title: "$BUNI Details", desc: "Tokenomics, supply, and claim mechanics are shared." },
-  { phase: "Phase V", title: "The Systems Begin", desc: "The Warren, Arena, Burrow, and Bunii Machine start opening." },
+export const HOW_IT_WORKS = [
+  { emoji: "🎮", title: "Play or complete missions", desc: "Grab a Bunii in the claw game, or complete the BuniiList missions on X." },
+  { emoji: "👛", title: "Submit your wallet", desc: "Drop your EVM address once you qualify. One wallet, one spot." },
+  { emoji: "🐰", title: "Get selected & mint free", desc: "First 1,000 wallets mint for free once the BuniiList closes." },
 ];
 
 export const FAQS = [
   { q: "What is Bunii?", a: "A collection of cute little troublemakers hopping onto Robinhood." },
-  { q: "What is the mint price?", a: "Free, for the first 1,000 wallets on the BuniiList." },
-  { q: "Where is mint?", a: "Mint details are shared once BuniiList review closes." },
-  { q: "What is The BuniiList?", a: "The only mint access phase." },
-  { q: "Is there public mint?", a: "If any spots remain after the BuniiList, yes." },
-  { q: "What is $BUNI?", a: "The token planned to power future Bunii systems after mint." },
-  { q: "When will $BUNI details drop?", a: "After mint." },
+  { q: "What's the mint price?", a: "Free — for the first 1,000 wallets on the BuniiList." },
+  { q: "How do I get on the BuniiList?", a: "Play the grab game for a shot at a spot, or complete the missions on X." },
+  { q: "Is there a public mint?", a: "If any spots remain after the BuniiList, yes." },
   { q: "Is this financial advice?", a: "No. Bunii is a digital collectible. DYOR." },
 ];
 
