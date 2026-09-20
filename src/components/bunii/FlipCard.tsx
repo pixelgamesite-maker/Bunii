@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { gold, sans, serif } from "@/lib/bunii-theme";
+import { gold, panel, sans, serif } from "@/lib/bunii-theme";
 
 export function FlipCard({
   index,
@@ -31,7 +31,7 @@ export function FlipCard({
     onFlip?.();
   }
 
-  const bg = `linear-gradient(160deg,#1a1610 0%,#0e0c08 100%)`;
+  const bg = `linear-gradient(160deg, ${panel} 0%, #180a2c 100%)`;
   const borderCol = done ? `${gold}55` : locked ? "rgba(255,255,255,0.04)" : `${gold}33`;
 
   return (
@@ -110,7 +110,7 @@ export function FlipCard({
             transform: "rotateY(180deg)",
             position: flipped ? "relative" : "absolute",
             inset: 0,
-            background: done ? "linear-gradient(160deg,#121a10 0%,#0a0f08 100%)" : bg,
+            background: done ? `linear-gradient(160deg, #17324a 0%, ${panel} 100%)` : bg,
             border: `1px solid ${done ? `${gold}55` : `${gold}22`}`,
             borderRadius: "12px",
             padding: "14px 12px",
