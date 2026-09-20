@@ -3,14 +3,14 @@ import { Link } from "wouter";
 import {
   FONT_LINK,
   creamInk,
-  emberGlow,
   goldLine,
-  night,
-  nightDeep,
-  nightTop,
+  plum,
+  plumDeep,
+  plumLift,
   sans,
   serif,
   surface,
+  violetGlow,
 } from "@/lib/bunii-theme";
 import { X_URL } from "@/lib/bunii-data";
 
@@ -26,9 +26,9 @@ export default function Home() {
     <div className="page">
       <style>{`
         *{box-sizing:border-box;}
-        body{margin:0;background:${night};}
+        body{margin:0;background:${plum};}
         a{color:inherit;text-decoration:none;}
-        ::selection{background:${goldLine};color:${nightDeep};}
+        ::selection{background:${goldLine};color:${plumDeep};}
 
         .page{
           min-height:100svh;
@@ -37,20 +37,21 @@ export default function Home() {
           font-family:${sans};
           color:${creamInk};
           background:
-            radial-gradient(90% 70% at 18% 0%, ${nightTop} 0%, transparent 62%),
-            radial-gradient(70% 55% at 88% 96%, ${emberGlow}2e 0%, transparent 68%),
-            linear-gradient(170deg, ${night} 0%, ${night} 45%, ${nightDeep} 100%);
+            radial-gradient(85% 65% at 16% 2%, ${plumLift} 0%, transparent 64%),
+            radial-gradient(70% 55% at 90% 98%, ${violetGlow}33 0%, transparent 68%),
+            linear-gradient(172deg, ${plum} 0%, ${plum} 48%, ${plumDeep} 100%);
         }
 
         /* ── header ── */
         .bar{
           position:sticky;top:0;z-index:40;
           display:flex;align-items:center;justify-content:space-between;
-          gap:20px;flex-wrap:wrap;
-          padding:18px clamp(18px,4vw,40px);
-          backdrop-filter:blur(14px);
-          -webkit-backdrop-filter:blur(14px);
-          background:linear-gradient(${night}e6, ${night}66);
+          gap:20px;
+          padding:16px clamp(18px,4vw,40px);
+          background:${plumLift}f2;
+          backdrop-filter:blur(16px);
+          -webkit-backdrop-filter:blur(16px);
+          box-shadow:inset 0 -1px 0 ${goldLine}26, 0 18px 40px -34px #000;
         }
         .brand{display:flex;align-items:center;gap:13px;}
         .brand img{
@@ -65,23 +66,21 @@ export default function Home() {
           color:${creamInk};
         }
 
-        .nav{
-          display:flex;align-items:center;gap:6px;
-          background:${surface}cc;
+        .x-link{
+          display:flex;align-items:center;justify-content:center;
+          width:42px;height:42px;border-radius:999px;
+          color:${creamInk}d9;
+          background:${surface}b3;
           border:1px solid ${goldLine}2e;
-          border-radius:999px;
-          padding:5px;
-          box-shadow:inset 0 1px 0 ${creamInk}0f, 0 14px 34px -22px #000;
+          box-shadow:inset 0 1px 0 ${creamInk}0f;
+          transition:background .25s ease,color .25s ease,border-color .25s ease;
         }
-        .nav a,.nav span{
-          font-size:.8rem;font-weight:500;letter-spacing:.1em;
-          text-transform:uppercase;
-          padding:10px 18px;border-radius:999px;
-          transition:background .25s ease,color .25s ease;
+        .x-link:hover,.x-link:focus-visible{
+          background:${goldLine};
+          border-color:${goldLine};
+          color:${plumDeep};
+          outline:none;
         }
-        .nav a{color:${creamInk}d9;}
-        .nav a:hover,.nav a:focus-visible{background:${goldLine};color:${nightDeep};outline:none;}
-        .nav span{color:${creamInk}42;cursor:default;}
 
         /* ── banners ── */
         .deck{
@@ -106,7 +105,7 @@ export default function Home() {
           box-shadow:
             inset 0 0 0 1px ${goldLine}33,
             0 34px 64px -30px #000,
-            0 0 0 1px ${nightDeep};
+            0 0 0 1px ${plumDeep};
           animation:settle .8s cubic-bezier(.2,.7,.25,1) both;
           transition:transform .55s cubic-bezier(.2,.7,.25,1), box-shadow .55s ease;
         }
@@ -119,7 +118,7 @@ export default function Home() {
         }
         .banner::after{
           content:"";position:absolute;inset:0;
-          background:linear-gradient(180deg, ${nightDeep}40 0%, ${nightDeep}b3 100%);
+          background:linear-gradient(180deg, ${plumDeep}40 0%, ${plumDeep}b8 100%);
         }
 
         .banner__label{
@@ -135,7 +134,7 @@ export default function Home() {
           line-height:1;
           letter-spacing:-.02em;
           color:#fff;
-          text-shadow:0 2px 30px ${nightDeep};
+          text-shadow:0 2px 30px ${plumDeep};
         }
         .banner__label p{
           margin:0;
@@ -151,7 +150,7 @@ export default function Home() {
           box-shadow:
             inset 0 0 0 1px ${goldLine}80,
             0 44px 78px -32px #000,
-            0 0 0 1px ${nightDeep};
+            0 0 0 1px ${plumDeep};
           outline:none;
         }
         .banner--live:hover img,.banner--live:focus-visible img{transform:scale(1.05);}
@@ -173,13 +172,11 @@ export default function Home() {
           <span>Bunii</span>
         </div>
 
-        <nav className="nav">
-          <Link href="/game">Game</Link>
-          <span>Buniverse</span>
-          <a href={X_URL} target="_blank" rel="noopener noreferrer">
-            X
-          </a>
-        </nav>
+        <a href={X_URL} target="_blank" rel="noopener noreferrer" className="x-link" aria-label="Bunii on X">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.259 5.63L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z" />
+          </svg>
+        </a>
       </header>
 
       <main className="deck">
