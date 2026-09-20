@@ -8,15 +8,15 @@ import { isValidEvm } from "@/lib/validators";
 const SPRITES = ["/bun1.png", "/bun2.png", "/bun3.png", "/bun4.png", "/bun5.png"];
 
 // Fall time tightens across the five drops. Lower = harder.
-const FALL_FIRST = 1000;
-const FALL_LAST = 520;
+const FALL_FIRST = 820;
+const FALL_LAST = 430;
 
 // Gap between drops. Deliberately wide so the wait is unnerving.
-const GAP_MIN = 650;
-const GAP_MAX = 2100;
+const GAP_MIN = 450;
+const GAP_MAX = 1500;
 
 // Chance a drop brings a second bun with it, while two still hang.
-const DOUBLE_CHANCE = 0.38;
+const DOUBLE_CHANCE = 0.45;
 const DOUBLE_OFFSET_MIN = 110;
 const DOUBLE_OFFSET_MAX = 380;
 
