@@ -1,15 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FocusEvent } from "react";
 import { BUNII_IMAGES } from "@/lib/bunii-data";
+import { supabase } from "@/lib/supabase";
+import { isValidEvm } from "@/lib/validators";
 
 /**
  * Whitelist claw-machine game. Pseudo-3D (CSS perspective on the glass
  * case, flat sprites for the claw/prizes) — no 3D engine needed.
  *
- * All positioning is percentage-based (not pixel-measured) so it stays
- * correct across screen sizes without a resize observer.
+ * Rule: grab 3+ prizes (winCount > 2) and a wallet-claim panel unlocks
+ * below the machine. Submitting a valid EVM address writes a row to the
+ * `bunii` table in Supabase — see supabase/bunii-table.sql for the schema.
+ *
+ * All game positioning is percentage-based (not pixel-measured) so it
+ * stays correct across screen sizes without a resize observer.
  */
 
 const CAP = 1000;
+const WINS_TO_UNLOCK = 2; // "above 2" — i.e. the 3rd successful grab unlocks the claim
 const RAIL_PAD = 6; // matches the rail's left/right inset, in %
 const PRIZE_COUNT = 9;
 
@@ -47,7 +54,7 @@ function wait(ms: number) {
 
 export function ClawMachine() {
   const [claimed, setClaimed] = useState(247); // seeded so the counter feels alive
-  const [myWin, setMyWin] = useState(false);
+  const [winCount, setWinCount] = useState(0);
   const [busy, setBusy] = useState(false);
   const [clawPct, setClawPct] = useState(50); // 0-100 across the rail
   const [knobOffset, setKnobOffset] = useState(0);
@@ -58,12 +65,20 @@ export function ClawMachine() {
   const [risingPrize, setRisingPrize] = useState<{ id: number; xPct: number } | null>(null);
   const [toast, setToast] = useState<{ msg: string; show: boolean }>({ msg: "", show: false });
 
+  // wallet claim panel
+  const [wallet, setWallet] = useState("");
+  const [claimSending, setClaimSending] = useState(false);
+  const [claimSubmitted, setClaimSubmitted] = useState(false);
+  const [claimError, setClaimError] = useState("");
+
   const clawPctRef = useRef(clawPct);
   clawPctRef.current = clawPct;
   const busyRef = useRef(busy);
   busyRef.current = busy;
   const joystickRef = useRef<HTMLDivElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const unlocked = winCount > WINS_TO_UNLOCK;
 
   function showToast(msg: string, ms = 2200) {
     setToast({ msg, show: true });
@@ -167,25 +182,59 @@ export function ClawMachine() {
       });
       setRisingPrize(null);
 
-      setClaimed((c) => {
-        if (!myWin && c < CAP) {
-          setMyWin(true);
-          showToast("You're in! Whitelist spot secured — connect wallet to lock it in.", 3200);
-          setStatus("Spot secured ✓");
-          return c + 1;
-        }
-        if (c >= CAP) {
-          showToast("All 1000 spots are claimed. Follow for the next drop.", 2800);
+      setWinCount((c) => {
+        const next = c + 1;
+        if (next === WINS_TO_UNLOCK + 1) {
+          showToast("Unlocked! Enter your wallet below to claim your spot.", 3200);
+        } else if (next < WINS_TO_UNLOCK + 1) {
+          showToast(`Nice grab! ${next}/${WINS_TO_UNLOCK + 1} to unlock wallet claim.`, 2200);
         } else {
-          showToast("Nice grab! (One spot per wallet — this run was for fun.)", 2600);
+          showToast("Nice grab!", 1800);
         }
-        return c;
+        return next;
       });
+      setStatus("Got one!");
     } else {
       setStatus("Slide to aim, then GRAB");
     }
 
     setBusy(false);
+  }
+
+  async function submitWallet() {
+    if (!isValidEvm(wallet)) {
+      setClaimError("That doesn't look like a valid EVM address (0x + 40 hex characters).");
+      return;
+    }
+    if (claimSubmitted) return;
+
+    setClaimError("");
+    setClaimSending(true);
+
+    const { error } = await supabase.from("bunii").insert([{ wallet: wallet.trim(), grabs: winCount }]);
+
+    setClaimSending(false);
+
+    if (error) {
+      // Postgres unique_violation — this wallet already has a row
+      if ((error as { code?: string }).code === "23505") {
+        setClaimError("This wallet has already claimed a spot.");
+      } else {
+        setClaimError("Something went wrong submitting your wallet. Try again.");
+      }
+      return;
+    }
+
+    setClaimSubmitted(true);
+    setClaimed((c) => Math.min(CAP, c + 1));
+    showToast("You're on the BuniiList!", 2800);
+  }
+
+  function focusInp(e: FocusEvent<HTMLInputElement>) {
+    e.target.style.borderColor = "rgba(126,227,224,0.66)";
+  }
+  function blurInp(e: FocusEvent<HTMLInputElement>) {
+    e.target.style.borderColor = "rgba(126,227,224,0.22)";
   }
 
   const clawLeftPct = clawPct;
@@ -257,16 +306,50 @@ export function ClawMachine() {
             <div style={{ ...joystickKnobStyle, transform: `translateX(${knobOffset}px)` }} />
           </div>
           <div style={statusTextStyle}>{status}</div>
-          <button onClick={doGrab} disabled={busy || myWin} style={grabBtnStyle}>
+          <button onClick={doGrab} disabled={busy} style={grabBtnStyle}>
             GRAB
           </button>
         </div>
       </div>
 
-      <p style={footnoteStyle}>
-        Prototype — placeholder art wired to the uploaded Bunii character set. One play per wallet at launch; connect wallet after a successful grab to lock
-        your spot.
-      </p>
+      <div style={progressRowStyle}>
+        {Array.from({ length: WINS_TO_UNLOCK + 1 }).map((_, i) => (
+          <div key={i} style={{ ...pipStyle, background: i < winCount ? "#c6ff5e" : "rgba(255,255,255,0.15)" }} />
+        ))}
+        <span style={progressLabelStyle}>{unlocked ? "Wallet claim unlocked" : `${winCount}/${WINS_TO_UNLOCK + 1} grabs to unlock wallet claim`}</span>
+      </div>
+
+      {unlocked && (
+        <div style={claimPanelStyle}>
+          {claimSubmitted ? (
+            <p style={{ margin: 0, fontWeight: 700, color: "#c6ff5e", fontSize: "13px" }}>✓ Spot claimed — you're on the BuniiList.</p>
+          ) : (
+            <>
+              <p style={{ margin: "0 0 8px", fontSize: "12px", color: "#c9c0e8", fontWeight: 600 }}>Enter your EVM wallet to claim your spot</p>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="text"
+                  placeholder="0x..."
+                  value={wallet}
+                  onChange={(e) => setWallet(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") submitWallet();
+                  }}
+                  onFocus={focusInp}
+                  onBlur={blurInp}
+                  style={claimInputStyle}
+                />
+                <button onClick={submitWallet} disabled={claimSending} style={claimBtnStyle}>
+                  {claimSending ? "..." : "Claim"}
+                </button>
+              </div>
+              {claimError && <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#ff6b6b" }}>{claimError}</p>}
+            </>
+          )}
+        </div>
+      )}
+
+      <p style={footnoteStyle}>One wallet per spot — duplicate submissions are rejected. Grabs use placeholder odds for this prototype.</p>
 
       <div style={{ ...toastStyle, opacity: toast.show ? 1 : 0, transform: toast.show ? "translateX(-50%) translateY(0)" : "translateX(-50%) translateY(20px)" }}>
         {toast.msg}
@@ -414,6 +497,44 @@ const grabBtnStyle: React.CSSProperties = {
   color: "#0c2a18",
   cursor: "pointer",
 };
+
+const progressRowStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: "6px", marginTop: "16px", maxWidth: "420px" };
+const pipStyle: React.CSSProperties = { width: "10px", height: "10px", borderRadius: "50%", flexShrink: 0, transition: "background .3s ease" };
+const progressLabelStyle: React.CSSProperties = { fontSize: "11px", color: "#c9c0e8", marginLeft: "6px" };
+
+const claimPanelStyle: React.CSSProperties = {
+  width: "100%",
+  maxWidth: "420px",
+  marginTop: "14px",
+  padding: "14px 16px",
+  borderRadius: "12px",
+  background: "rgba(126,227,224,0.08)",
+  border: "1px solid rgba(126,227,224,0.3)",
+};
+const claimInputStyle: React.CSSProperties = {
+  flex: 1,
+  background: "rgba(0,0,0,0.4)",
+  border: "1px solid rgba(126,227,224,0.22)",
+  borderRadius: "6px",
+  padding: "9px 11px",
+  fontSize: "13px",
+  color: "#fff",
+  outline: "none",
+  fontFamily: "inherit",
+};
+const claimBtnStyle: React.CSSProperties = {
+  background: "#7ee3e0",
+  color: "#0c2a2a",
+  border: "none",
+  borderRadius: "6px",
+  padding: "0 18px",
+  fontWeight: 800,
+  fontSize: "12px",
+  letterSpacing: "0.05em",
+  textTransform: "uppercase",
+  cursor: "pointer",
+};
+
 const footnoteStyle: React.CSSProperties = { maxWidth: "420px", textAlign: "center", fontSize: "12px", color: "#c9c0e8", marginTop: "16px", lineHeight: 1.5 };
 const toastStyle: React.CSSProperties = {
   position: "fixed",
