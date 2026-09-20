@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FocusEvent } from "react";
 import { BUNII_IMAGES } from "@/lib/bunii-data";
+import { sans, serif } from "@/lib/bunii-theme";
 import { supabase } from "@/lib/supabase";
 import { isValidEvm } from "@/lib/validators";
 
@@ -367,7 +368,7 @@ const containerStyle: React.CSSProperties = {
   alignItems: "center",
   width: "100%",
   color: "#f4efe6",
-  fontFamily: "'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+  fontFamily: sans,
 };
 
 const keyframes = `
@@ -390,6 +391,7 @@ const cabinetTopStyle: React.CSSProperties = {
 };
 const marqueeStyle: React.CSSProperties = {
   textAlign: "center",
+  fontFamily: serif,
   fontWeight: 800,
   fontSize: "13px",
   letterSpacing: "0.04em",
@@ -492,6 +494,7 @@ const grabBtnStyle: React.CSSProperties = {
   border: "none",
   background: "radial-gradient(circle at 35% 30%, #7dffb0, #3ddc84)",
   boxShadow: "0 4px 0 #1f9e5a, 0 8px 16px rgba(0,0,0,0.4)",
+  fontFamily: serif,
   fontWeight: 800,
   fontSize: "14px",
   color: "#0c2a18",
