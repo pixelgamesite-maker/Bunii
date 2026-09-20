@@ -2,19 +2,8 @@ import { useEffect, useState, type CSSProperties, type FocusEvent } from "react"
 import { gold, goldLight, sans, serif } from "@/lib/bunii-theme";
 import { PINNED_TWEET_URL } from "@/lib/bunii-data";
 import { supabase } from "@/lib/supabase";
+import { isValidEvm, isValidUrl } from "@/lib/validators";
 import { FlipCard } from "./FlipCard";
-
-function isValidEvm(a: string) {
-  return /^0x[0-9a-fA-F]{40}$/.test(a.trim());
-}
-function isValidUrl(u: string) {
-  try {
-    const url = new URL(u.trim());
-    return url.protocol === "https:" || url.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
 
 const inp: CSSProperties = {
   width: "100%",
