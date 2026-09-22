@@ -5,12 +5,15 @@ export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY ?? "",
   {
     auth: {
-      // PKCE: X redirects back with ?code=…, which the client swaps for a
-      // session on load. Safer than tokens in the URL hash.
+      // PKCE: X sends the player back to /auth/callback?code=…, and that page
+      // swaps the code for a session.
       flowType: "pkce",
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,
+      // Off on purpose. pages/Auth/callback.tsx does the exchange itself —
+      // leaving this on as well means two exchanges race for one code, and
+      // the loser fails with "invalid grant".
+      detectSessionInUrl: false,
     },
   },
 );
