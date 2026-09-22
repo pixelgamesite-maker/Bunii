@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { creamInk, goldLine, plum, plumDeep, plumLift, serif, surface, violetGlow } from "@/lib/bunii-theme";
-import { useAccount } from "@/lib/bunii-account";
+import { useAuth } from "@/lib/auth";
 import { POINTS_PER_CATCH, finishRun, startRun, type RunResult } from "@/lib/bunii-api";
 
 /* ── tuning ─────────────────────────────────────────────────────── */
@@ -37,7 +37,7 @@ const rand = (min: number, max: number) => min + Math.random() * (max - min);
 const freshSlots = () => SPRITES.map<Slot>(() => ({ state: "hung", startedAt: 0, duration: FALL_START }));
 
 export function BuniiReaction() {
-  const { refresh } = useAccount();
+  const { refresh } = useAuth();
 
   const stageRef = useRef<HTMLDivElement>(null);
   const bunRefs = useRef<(HTMLDivElement | null)[]>([]);
