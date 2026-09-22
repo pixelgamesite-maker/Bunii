@@ -2,7 +2,8 @@ import { Link, Router as WouterRouter, Route, Switch } from "wouter";
 import Home from "@/pages/home";
 import Game from "@/pages/game";
 import Social from "@/pages/social";
-import { BuniiProvider } from "@/lib/bunii-account";
+import AuthCallback from "@/pages/Auth/callback";
+import { AuthProvider, AUTH_CALLBACK_PATH } from "@/lib/auth";
 import { SiteShell } from "@/components/bunii/SiteShell";
 import { serif } from "@/lib/bunii-theme";
 
@@ -34,16 +35,17 @@ function NotFound() {
 function App() {
   return (
     <div className="dark">
-      <BuniiProvider>
+      <AuthProvider>
         <WouterRouter>
           <Switch>
             <Route path="/" component={Home} />
             <Route path="/game" component={Game} />
             <Route path="/social" component={Social} />
+            <Route path={AUTH_CALLBACK_PATH} component={AuthCallback} />
             <Route component={NotFound} />
           </Switch>
         </WouterRouter>
-      </BuniiProvider>
+      </AuthProvider>
     </div>
   );
 }
