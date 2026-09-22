@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { creamInk, goldLine, plum, plumDeep, plumLift, serif, surface } from "@/lib/bunii-theme";
-import { useAccount } from "@/lib/bunii-account";
+import { useAuth } from "@/lib/auth";
 import { claimTask, fetchTasks, type SocialTask } from "@/lib/bunii-api";
 import { SiteShell, XGlyph } from "@/components/bunii/SiteShell";
 import { SignInCard } from "@/components/bunii/SignInCard";
 import { WalletClaim } from "@/components/bunii/WalletClaim";
 
 function TaskRow({ task, done }: { task: SocialTask; done: boolean }) {
-  const { applyStatus } = useAccount();
+  const { applyStatus } = useAuth();
   const [opened, setOpened] = useState(false);
   const [proof, setProof] = useState("");
   const [busy, setBusy] = useState(false);
@@ -86,7 +86,7 @@ function TaskRow({ task, done }: { task: SocialTask; done: boolean }) {
 }
 
 export default function Social() {
-  const { session, loading, status, statusError } = useAccount();
+  const { session, loading, status, statusError } = useAuth();
   const [tasks, setTasks] = useState<SocialTask[]>([]);
   const [tasksErr, setTasksErr] = useState("");
 
