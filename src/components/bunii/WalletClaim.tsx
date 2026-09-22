@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { creamInk, goldLine, plum, plumDeep, plumLift, serif } from "@/lib/bunii-theme";
-import { useAccount } from "@/lib/bunii-account";
+import { useAuth } from "@/lib/auth";
 import { isEvmAddress, shortAddress, submitWallet } from "@/lib/bunii-api";
 
 export function WalletClaim() {
-  const { status, applyStatus } = useAccount();
+  const { status, applyStatus } = useAuth();
   const [wallet, setWallet] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
