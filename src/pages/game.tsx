@@ -1,11 +1,11 @@
 import { creamInk, serif } from "@/lib/bunii-theme";
-import { useAccount } from "@/lib/bunii-account";
+import { useAuth } from "@/lib/auth";
 import { SiteShell } from "@/components/bunii/SiteShell";
 import { SignInCard } from "@/components/bunii/SignInCard";
 import { BuniiReaction } from "@/components/bunii/BuniiReaction";
 
 export default function Game() {
-  const { session, loading } = useAccount();
+  const { session, loading } = useAuth();
 
   return (
     <SiteShell>
