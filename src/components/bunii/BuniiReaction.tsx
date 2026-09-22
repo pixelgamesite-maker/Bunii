@@ -1,65 +1,76 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { creamInk, goldLine, plum, plumDeep, plumLift, sans, serif, surface, violetGlow } from "@/lib/bunii-theme";
-import { claimWallet } from "@/lib/bunii-gate";
-import { isValidEvm } from "@/lib/validators";
+import { Link } from "wouter";
+import { creamInk, goldLine, plum, plumDeep, plumLift, serif, surface, violetGlow } from "@/lib/bunii-theme";
+import { useAccount } from "@/lib/bunii-account";
+import { POINTS_PER_CATCH, finishRun, startRun, type RunResult } from "@/lib/bunii-api";
 
 /* ── tuning ─────────────────────────────────────────────────────── */
 
 const SPRITES = ["/bun1.png", "/bun2.png", "/bun3.png", "/bun4.png", "/bun5.png"];
+const LIVES = 3;
 
-// Fall time tightens across the five drops. Lower = harder.
-const FALL_FIRST = 820;
-const FALL_LAST = 430;
+// Everything ramps from its START value to its END value over RAMP_OVER catches.
+const RAMP_OVER = 30;
 
-// Gap between drops. Deliberately wide so the wait is unnerving.
-const GAP_MIN = 450;
-const GAP_MAX = 1500;
+// Time to hit the floor. Keep FALL_END above ~400ms — below that it stops
+// being hard and starts being impossible.
+const FALL_START = 820;
+const FALL_END = 430;
 
-// Chance a drop brings a second bun with it, while two still hang.
-const DOUBLE_CHANCE = 0.45;
-const DOUBLE_OFFSET_MIN = 110;
-const DOUBLE_OFFSET_MAX = 380;
+// Random gap between drops: [min, max].
+const GAP_START: [number, number] = [900, 1700];
+const GAP_END: [number, number] = [420, 950];
 
-type SlotState = "hung" | "falling" | "caught" | "lost";
-type Phase = "idle" | "playing" | "won" | "failed";
+// Chance a drop pulls a second bun with it, and how far behind it follows.
+const DOUBLE_START = 0.15;
+const DOUBLE_END = 0.45;
+const DOUBLE_OFFSET: [number, number] = [110, 380];
 
+/* ── types ──────────────────────────────────────────────────────── */
+
+type SlotState = "hung" | "falling" | "returning";
+type Phase = "idle" | "starting" | "playing" | "banking" | "over";
 type Slot = { state: SlotState; startedAt: number; duration: number };
 
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+const rand = (min: number, max: number) => min + Math.random() * (max - min);
+const freshSlots = () => SPRITES.map<Slot>(() => ({ state: "hung", startedAt: 0, duration: FALL_START }));
+
 export function BuniiReaction() {
+  const { refresh } = useAccount();
+
   const stageRef = useRef<HTMLDivElement>(null);
   const bunRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const [phase, setPhase] = useState<Phase>("idle");
-  const [collected, setCollected] = useState<boolean[]>(() => SPRITES.map(() => false));
+  const [caught, setCaught] = useState(0);
+  const [lives, setLives] = useState(LIVES);
   const [reaction, setReaction] = useState<number | null>(null);
-  const [bestReaction, setBestReaction] = useState<number | null>(null);
   const [flash, setFlash] = useState<"none" | "hit" | "miss">("none");
-
-  // wallet claim
-  const [wallet, setWallet] = useState("");
-  const [sending, setSending] = useState(false);
-  const [claimed, setClaimed] = useState(false);
-  const [claimErr, setClaimErr] = useState("");
+  const [result, setResult] = useState<RunResult | null>(null);
+  const [error, setError] = useState("");
 
   const g = useRef({
     phase: "idle" as Phase,
-    slots: SPRITES.map<Slot>(() => ({ state: "hung", startedAt: 0, duration: FALL_FIRST })),
-    dropped: 0,
+    runId: "",
+    slots: freshSlots(),
     caught: 0,
+    lives: LIVES,
     nextDrop: 0,
     queued: null as { index: number; at: number } | null,
     fallHeight: 300,
     reactions: [] as number[],
+    timers: [] as number[],
   });
 
+  /* timers are tracked so a new run can't be hit by the last run's rehangs */
+  const later = useCallback((fn: () => void, ms: number) => {
+    g.current.timers.push(window.setTimeout(fn, ms));
+  }, []);
+
   useEffect(() => {
-    try {
-      const r = localStorage.getItem("bunii_reaction_ms");
-      if (r) setBestReaction(parseInt(r, 10));
-      if (localStorage.getItem("bunii_gtd_submitted") === "true") setClaimed(true);
-    } catch {
-      // no persistence available
-    }
+    const s = g.current;
+    return () => s.timers.forEach(clearTimeout);
   }, []);
 
   useEffect(() => {
@@ -72,25 +83,48 @@ export function BuniiReaction() {
     return () => window.removeEventListener("resize", measure);
   }, []);
 
-  const pulse = useCallback((kind: "hit" | "miss") => {
-    setFlash(kind);
-    setTimeout(() => setFlash("none"), 280);
-  }, []);
+  const pulse = useCallback(
+    (kind: "hit" | "miss") => {
+      setFlash(kind);
+      later(() => setFlash("none"), 260);
+    },
+    [later],
+  );
 
-  const saveReaction = useCallback(() => {
-    const list = g.current.reactions;
-    if (!list.length) return;
-    try {
-      const fastest = Math.min(...list);
-      const prev = parseInt(localStorage.getItem("bunii_reaction_ms") || "99999", 10);
-      if (fastest < prev) {
-        localStorage.setItem("bunii_reaction_ms", String(fastest));
-        setBestReaction(fastest);
-      }
-    } catch {
-      // no persistence available
+  const rehang = useCallback(
+    (i: number, delay: number) => {
+      later(() => {
+        const el = bunRefs.current[i];
+        if (el) {
+          el.style.transition = "transform .42s cubic-bezier(.2,.8,.3,1), opacity .2s ease";
+          el.style.transform = "translate(-50%, 0) scale(1)";
+          el.style.opacity = "1";
+        }
+        later(() => {
+          const slot = g.current.slots[i];
+          if (slot.state === "returning") slot.state = "hung";
+        }, 420);
+      }, delay);
+    },
+    [later],
+  );
+
+  /* bank the run on the server — it clamps catches to what the clock allows */
+  const bank = useCallback(async () => {
+    const s = g.current;
+    const res = await finishRun(s.runId, s.caught);
+    if (res.ok) {
+      setResult(res.data);
+      refresh();
+    } else {
+      setError(res.message);
     }
-  }, []);
+    s.phase = "over";
+    setPhase("over");
+  }, [refresh]);
+
+  const bankRef = useRef(bank);
+  bankRef.current = bank;
 
   /* tap to catch */
   const grab = useCallback(
@@ -104,30 +138,19 @@ export function BuniiReaction() {
       s.reactions.push(ms);
       setReaction(ms);
 
-      slot.state = "caught";
       s.caught += 1;
+      setCaught(s.caught);
+      slot.state = "returning";
 
       const el = bunRefs.current[i];
       if (el) {
-        el.style.transition = "transform .38s cubic-bezier(.2,1.3,.4,1), opacity .38s ease";
-        el.style.transform = "translate(-50%, -34px) scale(.2)";
-        el.style.opacity = "0";
+        el.style.transition = "transform .3s cubic-bezier(.2,1.4,.4,1)";
+        el.style.transform = "translate(-50%, -14px) scale(1.22)";
       }
-
-      setCollected((c) => {
-        const next = [...c];
-        next[i] = true;
-        return next;
-      });
       pulse("hit");
-
-      if (s.caught === SPRITES.length) {
-        s.phase = "won";
-        setPhase("won");
-        saveReaction();
-      }
+      rehang(i, 180);
     },
-    [pulse, saveReaction],
+    [pulse, rehang],
   );
 
   /* main loop */
@@ -136,13 +159,8 @@ export function BuniiReaction() {
 
     function launch(index: number, now: number) {
       const s = g.current;
-      const step = s.dropped / (SPRITES.length - 1);
-      s.slots[index] = {
-        state: "falling",
-        startedAt: now,
-        duration: FALL_FIRST - (FALL_FIRST - FALL_LAST) * step,
-      };
-      s.dropped += 1;
+      const ramp = Math.min(s.caught / RAMP_OVER, 1);
+      s.slots[index] = { state: "falling", startedAt: now, duration: lerp(FALL_START, FALL_END, ramp) };
       const el = bunRefs.current[index];
       if (el) el.style.transition = "none";
     }
@@ -151,6 +169,8 @@ export function BuniiReaction() {
       const s = g.current;
 
       if (s.phase === "playing") {
+        const ramp = Math.min(s.caught / RAMP_OVER, 1);
+
         // the second bun of a double drop
         if (s.queued && now >= s.queued.at) {
           if (s.slots[s.queued.index].state === "hung") launch(s.queued.index, now);
@@ -165,17 +185,21 @@ export function BuniiReaction() {
             launch(first, now);
 
             const rest = hung.filter((i) => i !== first);
-            if (rest.length && Math.random() < DOUBLE_CHANCE) {
+            if (rest.length && Math.random() < lerp(DOUBLE_START, DOUBLE_END, ramp)) {
               s.queued = {
                 index: rest[Math.floor(Math.random() * rest.length)],
-                at: now + DOUBLE_OFFSET_MIN + Math.random() * (DOUBLE_OFFSET_MAX - DOUBLE_OFFSET_MIN),
+                at: now + rand(DOUBLE_OFFSET[0], DOUBLE_OFFSET[1]),
               };
             }
-            s.nextDrop = now + GAP_MIN + Math.random() * (GAP_MAX - GAP_MIN);
           }
+
+          s.nextDrop =
+            now + rand(lerp(GAP_START[0], GAP_END[0], ramp), lerp(GAP_START[1], GAP_END[1], ramp));
         }
 
         for (let i = 0; i < s.slots.length; i++) {
+          if (s.phase !== "playing") break;
+
           const slot = s.slots[i];
           if (slot.state !== "falling") continue;
 
@@ -183,15 +207,22 @@ export function BuniiReaction() {
           const el = bunRefs.current[i];
 
           if (t >= 1) {
-            slot.state = "lost";
+            slot.state = "returning";
             if (el) {
               el.style.transform = `translate(-50%, ${s.fallHeight}px) scale(1.12, .78)`;
-              el.style.opacity = "0.22";
+              el.style.opacity = "0.25";
             }
-            s.phase = "failed";
-            setPhase("failed");
+            s.lives -= 1;
+            setLives(s.lives);
             pulse("miss");
-            saveReaction();
+            rehang(i, 320);
+
+            if (s.lives <= 0) {
+              s.phase = "banking";
+              setPhase("banking");
+              bankRef.current();
+              break;
+            }
             continue;
           }
 
@@ -206,17 +237,34 @@ export function BuniiReaction() {
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [pulse, saveReaction]);
+  }, [pulse, rehang]);
 
-  function start() {
+  async function start() {
     const s = g.current;
-    s.slots = SPRITES.map<Slot>(() => ({ state: "hung", startedAt: 0, duration: FALL_FIRST }));
-    s.dropped = 0;
+    if (s.phase === "starting" || s.phase === "banking" || s.phase === "playing") return;
+
+    setError("");
+    setResult(null);
+    s.phase = "starting";
+    setPhase("starting");
+
+    const res = await startRun();
+    if (!res.ok) {
+      setError(res.message);
+      s.phase = "idle";
+      setPhase("idle");
+      return;
+    }
+
+    s.timers.forEach(clearTimeout);
+    s.timers = [];
+    s.runId = res.data;
+    s.slots = freshSlots();
     s.caught = 0;
+    s.lives = LIVES;
     s.queued = null;
     s.reactions = [];
-    s.nextDrop = performance.now() + 1100;
-    s.phase = "playing";
+    s.nextDrop = performance.now() + 900;
 
     bunRefs.current.forEach((el) => {
       if (!el) return;
@@ -225,56 +273,23 @@ export function BuniiReaction() {
       el.style.opacity = "1";
     });
 
-    setCollected(SPRITES.map(() => false));
+    setCaught(0);
+    setLives(LIVES);
     setReaction(null);
-    setClaimErr("");
+    setFlash("none");
+
+    s.phase = "playing";
     setPhase("playing");
   }
 
-  async function submitWallet() {
-    if (claimed) return;
-    if (!isValidEvm(wallet)) {
-      setClaimErr("That doesn't look like a valid EVM address (0x + 40 characters).");
-      return;
-    }
-
-    setClaimErr("");
-    setSending(true);
-
-    const list = g.current.reactions;
-    const res = await claimWallet(
-      wallet,
-      Math.min(...list),
-      Math.round(list.reduce((a, b) => a + b, 0) / list.length),
-    );
-
-    setSending(false);
-
-    if (!res.ok) {
-      setClaimErr(res.message ?? "Something went wrong. Try again.");
-      return;
-    }
-
-    setClaimed(true);
-    try {
-      localStorage.setItem("bunii_gtd_submitted", "true");
-    } catch {
-      // no persistence available
-    }
-  }
-
-  const got = collected.filter(Boolean).length;
   const list = g.current.reactions;
   const avg = list.length ? Math.round(list.reduce((a, b) => a + b, 0) / list.length) : null;
+  const canClaim = !!result && result.total >= result.threshold;
 
   return (
     <div className="rig">
       <style>{`
-        .rig{
-          width:100%;max-width:880px;
-          font-family:${sans};color:${creamInk};
-          user-select:none;-webkit-user-select:none;touch-action:manipulation;
-        }
+        .rig{width:100%;max-width:880px;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
 
         .readout{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
         .cell{
@@ -282,18 +297,16 @@ export function BuniiReaction() {
           padding:12px 16px;display:flex;flex-direction:column;gap:5px;
         }
         .cell small{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:${creamInk}59;}
-        .cell b{font-family:${serif};font-weight:800;font-size:1.5rem;line-height:1;
-          font-variant-numeric:tabular-nums;}
-        .cell.ms b{color:${goldLine};}
+        .cell b{font-family:${serif};font-weight:800;font-size:1.5rem;line-height:1;font-variant-numeric:tabular-nums;}
+        .cell.gold b{color:${goldLine};}
 
-        .pips{display:flex;gap:7px;align-items:center;height:24px;}
-        .pip{width:12px;height:12px;border-radius:50%;background:${creamInk}1f;
-          transition:background .3s ease,box-shadow .3s ease;}
-        .pip.on{background:${goldLine};box-shadow:0 0 12px ${goldLine}aa;}
+        .hearts{display:flex;gap:7px;align-items:center;height:24px;}
+        .heart{width:12px;height:12px;border-radius:50%;background:${goldLine};
+          box-shadow:0 0 12px ${goldLine}aa;transition:background .3s ease,box-shadow .3s ease;}
+        .heart.gone{background:${creamInk}1f;box-shadow:none;}
 
         .stage{
-          position:relative;height:clamp(340px,54vh,470px);
-          border-radius:26px;overflow:hidden;
+          position:relative;height:clamp(340px,54vh,470px);border-radius:26px;overflow:hidden;
           background:
             radial-gradient(75% 55% at 50% 0%, ${plumLift} 0%, transparent 70%),
             radial-gradient(60% 45% at 50% 100%, ${violetGlow}33 0%, transparent 72%),
@@ -308,10 +321,6 @@ export function BuniiReaction() {
           position:absolute;top:34px;left:6%;right:6%;height:10px;border-radius:999px;
           background:linear-gradient(180deg, #F0E2C4, ${goldLine} 55%, #7A5C33);
           box-shadow:0 10px 28px -12px #000, 0 0 30px -8px ${goldLine}66;
-        }
-        .rack::before{
-          content:"";position:absolute;inset:-14px -10px auto;height:1px;
-          background:linear-gradient(90deg,transparent,${goldLine}4d,transparent);
         }
         .post{position:absolute;top:0;width:8px;height:34px;border-radius:0 0 3px 3px;
           background:linear-gradient(180deg, ${goldLine}, #6B4E2C);}
@@ -341,54 +350,33 @@ export function BuniiReaction() {
           gap:12px;text-align:center;padding:28px;
           background:${plumDeep}e8;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
         }
-        .veil h3{margin:0;font-family:${serif};font-weight:800;
-          font-size:clamp(1.6rem,4.4vw,2.2rem);line-height:1.08;}
-        .veil p{margin:0;font-weight:300;font-size:.92rem;color:${creamInk}a6;
-          max-width:34ch;line-height:1.55;}
-        .veil button{
-          margin-top:8px;font-family:${sans};font-size:.78rem;font-weight:600;
-          letter-spacing:.16em;text-transform:uppercase;
-          color:${plumDeep};background:${goldLine};border:none;border-radius:999px;
-          padding:14px 34px;cursor:pointer;transition:transform .2s ease,filter .2s ease;
-        }
-        .veil button:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08);}
-        .veil button:disabled{opacity:.5;cursor:default;}
+        .veil h3{margin:0;font-family:${serif};font-weight:800;font-size:clamp(1.6rem,4.4vw,2.2rem);line-height:1.08;}
+        .veil p{margin:0;font-weight:300;font-size:.92rem;color:${creamInk}a6;max-width:34ch;line-height:1.55;}
+        .veil .banked{font-family:${serif};font-weight:800;font-size:1.25rem;color:${goldLine};}
+        .veil__actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px;}
 
-        .gtd{font-size:.62rem;letter-spacing:.26em;text-transform:uppercase;color:${goldLine};margin:0;}
-
-        .claim{display:flex;gap:8px;width:100%;max-width:400px;margin-top:6px;}
-        .claim input{
-          flex:1;min-width:0;background:${plum}cc;color:${creamInk};
-          border:1px solid ${goldLine}40;border-radius:999px;
-          padding:13px 18px;font-family:${sans};font-size:.86rem;outline:none;
-          transition:border-color .2s ease;
-        }
-        .claim input:focus{border-color:${goldLine};}
-        .claim input::placeholder{color:${creamInk}40;}
-        .claim button{margin-top:0;padding:13px 24px;}
-        .err{color:#E88A6A;font-size:.8rem;margin:0;}
-        .fine{font-size:.72rem;color:${creamInk}59;margin:0;max-width:34ch;line-height:1.5;}
+        .meter{width:100%;max-width:300px;height:4px;border-radius:999px;background:${creamInk}1a;overflow:hidden;}
+        .meter span{display:block;height:100%;background:${goldLine};box-shadow:0 0 12px ${goldLine};
+          transition:width .6s cubic-bezier(.2,.7,.25,1);}
 
         .footline{margin:12px 0 0;text-align:center;font-size:.68rem;
           letter-spacing:.16em;text-transform:uppercase;color:${creamInk}4d;}
       `}</style>
 
       <div className="readout">
-        <div className="cell">
-          <small>Caught</small>
-          <b>
-            {got}/{SPRITES.length}
-          </b>
+        <div className="cell gold">
+          <small>Points</small>
+          <b>{(caught * POINTS_PER_CATCH).toLocaleString()}</b>
         </div>
-        <div className="cell ms">
+        <div className="cell">
           <small>Reaction</small>
           <b>{reaction !== null ? `${reaction}ms` : "—"}</b>
         </div>
         <div className="cell">
-          <small>Rack</small>
-          <div className="pips">
-            {collected.map((on, i) => (
-              <span key={i} className={`pip${on ? " on" : ""}`} />
+          <small>Lives</small>
+          <div className="hearts">
+            {Array.from({ length: LIVES }).map((_, i) => (
+              <span key={i} className={`heart${i < lives ? "" : " gone"}`} />
             ))}
           </div>
         </div>
@@ -415,65 +403,64 @@ export function BuniiReaction() {
           </div>
         ))}
 
-        {phase === "idle" && (
+        {(phase === "idle" || phase === "starting") && (
           <div className="veil">
-            <h3>Catch all five.</h3>
-            <p>They let go at random, sometimes two at once. Drop one and the run is over.</p>
-            <button onClick={start}>Start</button>
-          </div>
-        )}
-
-        {phase === "failed" && (
-          <div className="veil">
-            <h3>One got away.</h3>
+            <h3>Catch the Buniis.</h3>
             <p>
-              {got} of {SPRITES.length} caught{avg !== null ? ` · ${avg}ms average` : ""}. All five or nothing.
+              Every catch is worth {POINTS_PER_CATCH} points. They let go at random, sometimes two at once. Three misses
+              ends the run.
             </p>
-            <button onClick={start}>Try again</button>
+            {error && <p className="err">{error}</p>}
+            <div className="veil__actions">
+              <button type="button" className="btn" onClick={start} disabled={phase === "starting"}>
+                {phase === "starting" ? "Starting…" : "Start"}
+              </button>
+            </div>
           </div>
         )}
 
-        {phase === "won" && (
+        {phase === "banking" && (
           <div className="veil">
-            <p className="gtd">Guaranteed Spot</p>
-            <h3>All five.</h3>
+            <h3>{caught} caught</h3>
+            <p>Banking your points…</p>
+          </div>
+        )}
 
-            {claimed ? (
-              <p>Your wallet is locked in. Nothing else to do.</p>
-            ) : (
+        {phase === "over" && (
+          <div className="veil">
+            <h3>{caught} caught</h3>
+
+            {result ? (
               <>
-                <p>{avg !== null ? `${avg}ms average. ` : ""}Drop an EVM address to hold your spot.</p>
-                <div className="claim">
-                  <input
-                    type="text"
-                    inputMode="text"
-                    autoComplete="off"
-                    spellCheck={false}
-                    placeholder="0x..."
-                    value={wallet}
-                    onChange={(e) => setWallet(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") submitWallet();
-                    }}
-                  />
-                  <button onClick={submitWallet} disabled={sending}>
-                    {sending ? "..." : "Claim"}
-                  </button>
+                <p className="banked">+{result.points.toLocaleString()} points</p>
+                <div className="meter" aria-hidden>
+                  <span style={{ width: `${Math.min(100, (result.total / result.threshold) * 100)}%` }} />
                 </div>
-                {claimErr && <p className="err">{claimErr}</p>}
-                <p className="fine">Public address only. Never share a seed phrase or private key.</p>
+                <p>
+                  {canClaim
+                    ? `${result.total.toLocaleString()} points — enough to claim your spot.`
+                    : `${result.total.toLocaleString()} of ${result.threshold.toLocaleString()} toward your spot.`}
+                  {avg !== null ? ` ${avg}ms average.` : ""}
+                </p>
               </>
+            ) : (
+              error && <p className="err">This run couldn't be banked: {error}</p>
             )}
+
+            <div className="veil__actions">
+              <button type="button" className="btn" onClick={start}>
+                Play again
+              </button>
+              <Link href="/social" className="btn btn--ghost">
+                {canClaim ? "Claim your spot" : "Earn more on Social"}
+              </Link>
+            </div>
           </div>
         )}
       </div>
 
       <p className="footline">
-        {phase === "playing"
-          ? "Tap to catch"
-          : bestReaction !== null
-            ? `Fastest ever ${bestReaction}ms`
-            : "Tap to catch"}
+        {phase === "playing" ? "Tap to catch" : `${POINTS_PER_CATCH} points a catch · 3 lives`}
       </p>
     </div>
   );
