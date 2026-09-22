@@ -12,7 +12,7 @@ import {
   surface,
   violetGlow,
 } from "@/lib/bunii-theme";
-import { useAccount } from "@/lib/bunii-account";
+import { useAuth } from "@/lib/auth";
 import { X_PROFILE_URL } from "@/lib/bunii-api";
 
 let fontsLoaded = false;
@@ -37,7 +37,7 @@ export function XGlyph({ size = 14 }: { size?: number }) {
 }
 
 function AccountPill() {
-  const { session, loading, status, signIn, signOut } = useAccount();
+  const { session, loading, status, signIn, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
