@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { creamInk, goldLine, plum, plumDeep, plumLift, serif } from "@/lib/bunii-theme";
-import { useAccount } from "@/lib/bunii-account";
+import { useAuth } from "@/lib/auth";
 import { XGlyph } from "@/components/bunii/SiteShell";
 
 export function SignInCard({ title, body }: { title: string; body: string }) {
-  const { signIn, authError } = useAccount();
+  const { signIn, authError } = useAuth();
   const [busy, setBusy] = useState(false);
 
   return (
