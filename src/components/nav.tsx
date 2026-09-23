@@ -55,7 +55,7 @@ export default function Nav() {
       >
         <NavLink href="/" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <img
-              src="/buniilogo.jpg"
+              src="/bunii-logo.jpg"
               alt=""
               style={{ width: "30px", height: "30px", objectFit: "cover", border: RULE }}
             />
