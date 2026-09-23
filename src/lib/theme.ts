@@ -61,8 +61,8 @@ export const X_URL = "https://x.com/bunionrh";
 export const SITE_URL = "https://buniipad.xyz";
 export const JOIN_URL = "https://bunii.fun/join";
 
-// Placeholder preview art — swap for real Bunii character art once it exists.
+// Real Bunii character art, uploaded to public/.
 export const BUNII_IMAGES = [
-  "/bunii-1.jpg", "/bunii-2.jpg", "/bunii-3.jpg", "/bunii-4.jpg",
-  "/bunii-5.jpg", "/bunii-6.jpg", "/bunii-7.jpg", "/bunii-8.jpg",
+  "/1.jpeg", "/2.jpeg", "/3.jpeg", "/4.jpeg", "/5.jpeg", "/6.jpeg", "/7.jpeg",
+  "/8.jpeg", "/9.jpeg", "/10.jpeg", "/11.jpeg", "/12.jpeg", "/13.jpeg", "/14.jpeg",
 ];
