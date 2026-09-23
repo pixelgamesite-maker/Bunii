@@ -1,4 +1,4 @@
-import { color, displayType, radius, arch, offset, BUNII_IMAGES, X_URL, JOIN_URL } from "@/lib/theme";
+import { color, displayType, radius, arch, offset, BUNII_IMAGES, X_URL } from "@/lib/theme";
 import NavLink from "@/components/nav-link";
 
 /* Burrow doors along the hill in the hero. Aspect = width / height, so a
@@ -100,18 +100,16 @@ export default function Home() {
           >
             Mint a Bunii
           </NavLink>
-          <a
-            href={JOIN_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <NavLink
+            href="/checker"
             className="press pill-ghost"
             style={{
               fontWeight: 600, fontSize: "1rem", padding: "16px 30px", borderRadius: radius.pill,
               background: "transparent", color: color.ink, boxShadow: `inset 0 0 0 1.5px ${color.ink}`,
             }}
           >
-            Apply for a free spot
-          </a>
+            Check eligibility
+          </NavLink>
         </div>
 
         {/* burrow doors on the hill */}
