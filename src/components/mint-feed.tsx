@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useReadContract, usePublicClient } from "wagmi";
-import { color, font, RULE } from "@/lib/theme";
+import { color, displayType, radius } from "@/lib/theme";
 import { BUNIIPAD_ADDRESS, BUNIIPAD_ABI } from "@/lib/buniiPadContract";
 
 type FeedRow = { tokenId: string; to: string; key: string };
@@ -51,10 +51,10 @@ export default function MintFeed() {
 
     lastSupply.current = supply;
 
-    // ERC721A mints sequentially, so [prevSupply, supply) are the new token IDs.
-    // Token IDs may start at 0 or 1 depending on the contract — this assumes 0-indexed;
-    // flip to prevSupply + 1 .. supply if yours starts at 1.
-    const newIds = Array.from({ length: supply - prevSupply }, (_, i) => prevSupply + i);
+    // ERC721A mints sequentially and BuniiPad's token IDs start at 1, so the
+    // new IDs are prevSupply + 1 .. supply. (Burns lower totalSupply, which
+    // can shift this; the feed is a live indicator, not an audit log.)
+    const newIds = Array.from({ length: supply - prevSupply }, (_, i) => prevSupply + i + 1);
 
     let cancelled = false;
     (async () => {
@@ -87,42 +87,37 @@ export default function MintFeed() {
   }, [totalSupply, publicClient]);
 
   return (
-    <section style={{ border: RULE, background: color.paper }}>
-      <div
-        style={{
-          padding: "14px 18px", borderBottom: RULE,
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-        }}
-      >
-        <span style={{ fontFamily: font.display, fontWeight: 700, fontSize: "1rem", letterSpacing: "-0.01em" }}>
-          Live mints
-        </span>
-        <span style={{ display: "flex", alignItems: "center", gap: "7px", fontFamily: font.mono, fontSize: "0.64rem", letterSpacing: "0.12em", textTransform: "uppercase", color: color.inkSoft }}>
-          <span style={{ width: "7px", height: "7px", background: color.brand, animation: "blink 1.4s step-end infinite" }} />
+    <section style={{ background: color.card, borderRadius: radius.lg, padding: "22px 20px 16px", boxShadow: `inset 0 0 0 1px ${color.line}` }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+        <h2 style={{ ...displayType, fontWeight: 650, fontSize: "1.45rem", letterSpacing: "-0.02em", margin: 0 }}>
+          Just hopped in
+        </h2>
+        <span style={{ display: "flex", alignItems: "center", gap: "7px", fontSize: "0.84rem", fontWeight: 600, color: color.inkSoft }}>
+          <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: color.brand, animation: "pulse 1.6s ease-in-out infinite" }} />
           Live
         </span>
       </div>
 
       {rows.length === 0 ? (
-        <p style={{ fontFamily: font.mono, fontSize: "0.78rem", color: color.inkFaint, padding: "26px 18px", margin: 0, textAlign: "center" }}>
-          Waiting for the first mint.
+        <p style={{ fontSize: "0.94rem", color: color.inkFaint, padding: "28px 0 20px", margin: 0, textAlign: "center" }}>
+          New mints show up here as they happen.
         </p>
       ) : (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, maxHeight: "260px", overflowY: "auto" }}>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, maxHeight: "300px", overflowY: "auto" }}>
           {rows.map((r, i) => (
             <li
               key={r.key}
               style={{
-                display: "flex", justifyContent: "space-between", gap: "12px",
-                padding: "12px 18px",
-                borderBottom: i === rows.length - 1 ? "none" : `1px solid ${color.paperDeep}`,
-                background: i % 2 ? color.paperDeep : "transparent",
-                fontFamily: font.mono, fontSize: "0.76rem",
-                animation: "feedIn 0.3s ease both",
+                display: "flex", alignItems: "center", gap: "12px", padding: "10px 0",
+                borderTop: i === 0 ? "none" : `1px solid ${color.line}`,
+                animation: "feedIn 0.35s ease both",
               }}
             >
-              <span style={{ fontWeight: 500 }}>Bunii #{r.tokenId}</span>
-              <span style={{ color: color.inkSoft }}>{short(r.to)}</span>
+              <span style={{ width: "30px", height: "30px", borderRadius: "50%", background: color.paperDeep, display: "grid", placeItems: "center", fontSize: "0.9rem" }} aria-hidden>
+                🐇
+              </span>
+              <span style={{ fontWeight: 600, fontSize: "0.95rem" }}>Bunii #{r.tokenId}</span>
+              <span style={{ marginLeft: "auto", color: color.inkSoft, fontSize: "0.88rem" }}>{short(r.to)}</span>
             </li>
           ))}
         </ul>
