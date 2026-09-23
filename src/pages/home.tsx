@@ -103,7 +103,7 @@ export default function Home() {
           </div>
 
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <BuniiFrame size={360} caption="8 of 10,000 · art rotates" />
+            <BuniiFrame size={360} caption="14 of 10,000 · art rotates" />
           </div>
         </div>
       </section>
