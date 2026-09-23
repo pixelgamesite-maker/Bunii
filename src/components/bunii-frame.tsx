@@ -1,73 +1,73 @@
 import { useEffect, useState } from "react";
-import { color, font, RULE, BUNII_IMAGES } from "@/lib/theme";
+import { color, arch, BUNII_IMAGES } from "@/lib/theme";
 
-/** Color layers cycle alongside the art so the offset shadow shifts hue
- *  as the card rotates — the print never settles on one registration. */
-const SHADOW_COLORS = [color.brand, color.sun, color.tongue];
-
+/**
+ * Arched "burrow door" that cycles through the Bunii art with a soft
+ * crossfade. Used as the centrepiece of the mint console.
+ */
 export default function BuniiFrame({
-  size = 340,
-  interval = 3200,
-  caption,
+  width = 380,
+  aspect = 0.8,
+  interval = 2800,
+  tone = "dark",
+  showDots = true,
 }: {
-  size?: number;
+  width?: number;
+  aspect?: number;
   interval?: number;
-  caption?: string;
+  tone?: "dark" | "light";
+  showDots?: boolean;
 }) {
   const [i, setI] = useState(0);
-  const [fading, setFading] = useState(false);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setFading(true);
-      setTimeout(() => {
-        setI((n) => (n + 1) % BUNII_IMAGES.length);
-        setFading(false);
-      }, 220);
-    }, interval);
+    const id = setInterval(() => setI((n) => (n + 1) % BUNII_IMAGES.length), interval);
     return () => clearInterval(id);
   }, [interval]);
 
+  const ring = tone === "dark" ? "rgba(255,246,226,0.14)" : color.line;
+
   return (
-    <div style={{ display: "inline-flex", flexDirection: "column", gap: "14px" }}>
+    <div style={{ width, maxWidth: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: "18px" }}>
       <div
-        className="misreg"
         style={{
-          // @ts-expect-error -- CSS custom property
-          "--misreg-color": SHADOW_COLORS[i % SHADOW_COLORS.length],
-          width: size, height: size, maxWidth: "100%",
-          border: RULE, background: color.paperDeep,
-          position: "relative",
+          position: "relative", width: "100%", aspectRatio: String(aspect),
+          borderRadius: arch(aspect, 22), overflow: "hidden",
+          background: tone === "dark" ? color.deepRaised : color.paperDeep,
+          boxShadow: `0 0 0 8px ${ring}`,
         }}
       >
-        <img
-          src={BUNII_IMAGES[i]}
-          alt="Bunii collection preview"
-          style={{
-            width: "100%", height: "100%", objectFit: "cover", display: "block",
-            opacity: fading ? 0 : 1,
-            transition: "opacity 0.22s linear",
-          }}
-        />
+        {BUNII_IMAGES.map((src, n) => (
+          <img
+            key={src}
+            src={src}
+            alt={n === i ? "Bunii artwork preview" : ""}
+            aria-hidden={n !== i}
+            loading={n < 2 ? "eager" : "lazy"}
+            style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
+              opacity: n === i ? 1 : 0, transition: "opacity 0.7s ease",
+            }}
+          />
+        ))}
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
-        <span style={{ fontFamily: font.mono, fontSize: "0.68rem", color: color.inkSoft, letterSpacing: "0.06em" }}>
-          {caption ?? "Preview art · not your mint"}
-        </span>
-        <div style={{ display: "flex", gap: "4px" }}>
+      {showDots && (
+        <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", justifyContent: "center" }} aria-hidden>
           {BUNII_IMAGES.map((_, n) => (
             <span
               key={n}
               style={{
-                width: n === i ? "16px" : "6px", height: "6px",
-                background: n === i ? color.ink : color.inkFaint,
-                transition: "width 0.24s, background 0.24s",
+                width: n === i ? "18px" : "6px", height: "6px", borderRadius: "99px",
+                background: n === i
+                  ? (tone === "dark" ? color.sun : color.ink)
+                  : (tone === "dark" ? "rgba(255,246,226,0.25)" : color.inkFaint),
+                transition: "width 0.3s, background 0.3s",
               }}
             />
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 }
