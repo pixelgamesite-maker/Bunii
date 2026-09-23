@@ -1,19 +1,8 @@
-import { useLocation } from "wouter";
-import { color, font, displayType, radius } from "@/lib/theme";
+import { color, displayType } from "@/lib/theme";
 import SignInButton from "@/components/sign-in-button";
 import NavLink from "@/components/nav-link";
 
-type NavItem = { label: string; href: string };
-
-/** Only the pages that exist in this build. */
-export const NAV: NavItem[] = [
-  { label: "Home", href: "/" },
-  { label: "Mint", href: "/mint" },
-];
-
 export default function Nav() {
-  const [location] = useLocation();
-
   return (
     <header
       style={{
@@ -42,28 +31,7 @@ export default function Nav() {
           </span>
         </NavLink>
 
-        <nav style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          {NAV.map((item) => {
-            const active = location === item.href;
-            return (
-              <NavLink
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                style={{
-                  fontFamily: font.body, fontWeight: 600, fontSize: "0.92rem",
-                  padding: "9px 14px", borderRadius: radius.pill,
-                  background: active ? color.paperDeep : "transparent",
-                  color: active ? color.ink : color.inkSoft,
-                }}
-              >
-                {item.label}
-              </NavLink>
-            );
-          })}
-          <span style={{ width: "6px" }} />
-          <SignInButton />
-        </nav>
+        <SignInButton />
       </div>
     </header>
   );
