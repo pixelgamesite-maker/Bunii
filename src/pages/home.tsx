@@ -14,7 +14,7 @@ const DOORS = [
 const FACTS: { value: string; label: string }[] = [
   { value: "10,000", label: "Bunii in the collection" },
   { value: "Free", label: "for allowlisted wallets, up to 3 each" },
-  { value: "0.0007 ETH", label: "each in the public mint, no wallet limit" },
+  { value: "0.00055 ETH", label: "each in the public mint, no wallet limit" },
   { value: "Robinhood", label: "Chain, minting on BuniiPad" },
 ];
 
@@ -33,8 +33,8 @@ const STEPS = [
   },
   {
     title: "Public",
-    count: "3,900+",
-    body: "Everything that's left, at 0.0007 ETH each. Unclaimed allowlist spots roll in here.",
+    count: "3,900",
+    body: "Unclaimed allowlist spots roll in here.",
     tint: color.sun,
   },
 ];
