@@ -12,6 +12,7 @@ import Layout from "@/components/layout";
 import Home from "@/pages/home";
 import Mint from "@/pages/mint";
 import Admin from "@/pages/admin";
+import Checker from "@/pages/checker";
 import NavLink from "@/components/nav-link";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ export default function App() {
                 <Switch>
                   <Route path="/" component={Home} />
                   <Route path="/mint" component={Mint} />
+                  <Route path="/checker" component={Checker} />
                   <Route path="/admin" component={Admin} />
                   <Route component={NotFound} />
                 </Switch>
