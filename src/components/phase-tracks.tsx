@@ -62,61 +62,62 @@ function Track({
   );
 }
 
+/**
+ * Two tracks, not three: Team (fixed reserve) and Mintable (allowlist +
+ * public combined). The contract pools allowlist and public into one
+ * MINTABLE_SUPPLY with rollover — Allowlist and Public were never really
+ * separate ceilings, just two prices on the same pool — so showing them
+ * as one number here matches the actual mechanics instead of implying a
+ * fixed public allocation that doesn't exist.
+ */
 export default function PhaseTracks({
-  phase, teamMinted, teamCap, allowlistMinted, allowlistCap,
-  publicMinted, mintableSupply, elig, isConnected,
+  phase, teamMinted, teamCap, allowlistMinted, publicMinted, mintableSupply, elig, isConnected,
 }: {
   phase: number;
   teamMinted: unknown; teamCap: unknown;
-  allowlistMinted: unknown; allowlistCap: unknown;
-  publicMinted: unknown; mintableSupply: unknown;
+  allowlistMinted: unknown; publicMinted: unknown; mintableSupply: unknown;
   elig: Elig;
   isConnected: boolean;
 }) {
   const tMinted = num(teamMinted), tCap = num(teamCap);
-  const alMinted = num(allowlistMinted), alCap = num(allowlistCap);
-  const pubMinted = num(publicMinted), mintable = num(mintableSupply);
+  const alMinted = num(allowlistMinted), pubMinted = num(publicMinted), mintable = num(mintableSupply);
+  const mintableMinted = alMinted !== null && pubMinted !== null ? alMinted + pubMinted : null;
 
-  // Public draws from whatever the allowlist didn't use — one shared pool.
-  const publicCeiling = mintable !== null && alMinted !== null ? mintable - alMinted : null;
+  const isAllowlist = phase === PHASE.ALLOWLIST;
+  const isPublic = phase === PHASE.PUBLIC;
+  const tint = isPublic ? "#E3A915" : color.brand;
 
-  function allowlistStatus(): [string, Tone] {
-    if (isConnected) {
-      if (elig === "checking") return ["Checking your wallet…", "muted"];
-      if (elig === "yes") return ["You're on the allowlist.", "good"];
-      if (elig === "no") return ["This wallet isn't on the allowlist.", "bad"];
-      if (elig === "error") return ["Couldn't check eligibility right now. Try again shortly.", "bad"];
-      return ["", "muted"];
+  function mintableStatus(): [string, Tone] {
+    if (isPublic) return ["Open to everyone.", "good"];
+    if (isAllowlist) {
+      if (isConnected) {
+        if (elig === "checking") return ["Checking your wallet…", "muted"];
+        if (elig === "yes") return ["You're on the allowlist.", "good"];
+        if (elig === "no") return ["This wallet isn't on the allowlist.", "bad"];
+        if (elig === "error") return ["Couldn't check eligibility right now.", "bad"];
+        return ["", "muted"];
+      }
+      return ["Connect your wallet to check your spot.", "muted"];
     }
-    if (phase === PHASE.PUBLIC) return ["", "muted"];
-    return ["Connect your wallet to check your spot.", "muted"];
+    return ["Minting hasn't opened yet.", "muted"];
   }
 
-  const [alStatus, alTone] = allowlistStatus();
+  const [status, tone] = mintableStatus();
 
   return (
     <section style={{ background: color.card, borderRadius: radius.lg, padding: "22px 12px 14px", boxShadow: `inset 0 0 0 1px ${color.line}` }}>
       <h2 style={{ ...displayType, fontWeight: 650, fontSize: "1.45rem", letterSpacing: "-0.02em", margin: "0 8px 12px" }}>
-        Supply by phase
+        Supply
       </h2>
 
       <Track
-        name="Team reserve" minted={tMinted} cap={tCap} active={false} tint={color.ink}
-        status="Minted by the team, never sold." tone="muted"
+        name="Team" minted={tMinted} cap={tCap} active={false} tint={color.ink}
+        status="Reserved. Minted by the team, never sold." tone="muted"
       />
       <Track
-        name="Allowlist" minted={alMinted} cap={alCap} active={phase === PHASE.ALLOWLIST} tint={color.brand}
-        status={alStatus || undefined} tone={alTone}
+        name="Mintable" minted={mintableMinted} cap={mintable} active={isAllowlist || isPublic} tint={tint}
+        status={status || undefined} tone={tone}
       />
-      <Track
-        name="Public" minted={pubMinted} cap={publicCeiling} active={phase === PHASE.PUBLIC} tint="#E3A915"
-        status={phase === PHASE.PUBLIC ? "Open to everyone." : "Unclaimed allowlist supply rolls into this phase."}
-        tone={phase === PHASE.PUBLIC ? "good" : "muted"}
-      />
-
-      <p style={{ fontSize: "0.84rem", color: color.inkFaint, margin: "8px 18px 0", lineHeight: 1.5 }}>
-        Allowlist and public share one pool of {mintable !== null ? mintable.toLocaleString() : "—"}.
-      </p>
     </section>
   );
 }
