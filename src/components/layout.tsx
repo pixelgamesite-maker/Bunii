@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { color, font, displayType, loadFonts, X_URL, JOIN_URL } from "@/lib/theme";
+import { color, font, displayType, loadFonts, X_URL } from "@/lib/theme";
 import GlobalStyle from "@/components/global-style";
 import Nav from "@/components/nav";
 import NavLink from "@/components/nav-link";
@@ -32,7 +32,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div style={{ display: "flex", gap: "22px", flexWrap: "wrap" }}>
             <NavLink href="/mint" style={link}>Mint</NavLink>
-            <a href={JOIN_URL} target="_blank" rel="noopener noreferrer" style={link}>Apply for allowlist</a>
+            <NavLink href="/checker" style={link}>Check eligibility</NavLink>
             <a href={X_URL} target="_blank" rel="noopener noreferrer" style={link}>@bunionrh on X</a>
           </div>
         </div>
