@@ -1,51 +1,28 @@
-# Bunii structure
+# BuniiPad — Bunii mint site
 
-## File structure
-```
-src/
-  lib/
-    bunii-theme.ts      // fonts + colors, shared
-    bunii-data.ts        // copy/content constants (classes, traits, FAQ, roadmap...)
-    supabase.ts           // Supabase client
-  hooks/
-    useScrollReveal.ts
-  components/bunii/
-    Label.tsx
-    Divider.tsx
-    RevealSection.tsx
-    Particles.tsx
-    FlipCard.tsx
-    BuniiGallery.tsx
-    FaqItem.tsx
-    WhitelistModal.tsx    // the whole BuniiList application flow, self-contained
-    ClawMachine.tsx        // the whitelist game
-  pages/
-    home.tsx               // assembles everything above
-    game.tsx                // hosts <ClawMachine />, own route
-  App.tsx                   // now has "/" and "/game" routes
-```
+Adapted from CrocPad's frontend for the Bunii collection (10,000 supply,
+6,000 free allowlist, ~3,900 public at 0.0007 ETH, 100 team) — the first
+official launch on BuniiPad, per the launch article.
 
-## Drop your images in
-Put `bunii1.png` … `bunii5.png` in the `public/` folder at project root
-(same place `mini-logo.jpg` used to live). They're referenced as
-`/bunii1.png` etc. throughout — the character gallery, the class rows,
-and the claw machine prizes all pull from this same 5-image set.
+Trimmed to the three pages this launch actually needs: Home, Mint, Admin.
+The rest of BuniiPad's eventual platform (creator dashboards, Discover,
+Following, etc.) is future work described in the article, not part of
+this build.
 
-## Things I picked without asking — sanity check these
-- **Token ticker**: used `$BUNI` as a placeholder (was `$MINO`). Rename in
-  `bunii-data.ts` / `home.tsx` if the real one's different.
-- **Chain**: labeled "Robinhood" in the stat rows since the X bio says
-  "hopping through @RobinhoodApp" — confirm this is actually the mint chain.
-- **Mint mechanics**: changed from the template's "10,000 supply / 0.001 ETH"
-  to "free / first 1,000 wallets" per what's been discussed. Supply beyond
-  the first 1,000 free spots isn't specified anywhere yet — add if there's
-  a larger total collection size.
-- **Pinned tweet URL**: `PINNED_TWEET_URL` in `bunii-data.ts` just points at
-  the profile, not an actual tweet — swap in the real pinned-tweet link once
-  it exists, since the whitelist missions open it.
-- **Supabase table**: submissions now insert into a `bunii_whitelist` table
-  (was `minions`). Create that table (columns: `wallet`, `twitter`,
-  `quote_url`) or rename it back to match whatever exists.
-- **Claw machine wallet-connect**: still not wired up — grabbing a prize
-  shows a "connect wallet to lock it in" toast but doesn't actually open
-  RainbowKit yet. Say the word and I'll wire that in.
+## Before this goes live
+
+- **Real Bunii art.** `BUNII_IMAGES` in `src/lib/theme.ts` and the
+  favicon/logo files in `public/` are all placeholders.
+- **Price mismatch.** The homepage shows 0.0007 ETH (per the article).
+  The deployed contract's `publicPrice` is still 0.00055 ETH. Call
+  `setPrices()` before launch or the mint page will charge the old price.
+- **Allowlist API isn't deployed yet.** `ALLOWLIST_API_URL` in
+  `src/lib/buniiPadContract.ts` is a placeholder — the allowlist phase's
+  eligibility check and the admin CSV upload will both fail until it's
+  live.
+- **`TEAM_WALLETS` is empty.** Fill in the real Bunii team wallet(s)
+  before using the admin page's team-mint presets.
+- **WalletConnect project ID** in `src/lib/wagmiConfig.ts` is still a
+  placeholder.
+- **`VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`** need to be set as
+  real environment variables at build time.
