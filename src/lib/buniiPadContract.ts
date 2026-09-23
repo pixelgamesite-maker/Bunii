@@ -2,12 +2,7 @@
 // source of truth the site reads from.
 export const BUNIIPAD_ADDRESS = "0x2E04eb88d9e9d066D7b0977848ffb02Dd4eaf346";
 
-// TODO: not deployed yet — the allowlist API build is a separate step
-// after this site. Point this at the real Railway URL once that service
-// (and its /admin/allowlist + /api/allowlist-proof routes) is live.
-// Until then, the allowlist phase's eligibility check and the admin
-// page's CSV upload will both fail against this placeholder.
-export const ALLOWLIST_API_URL = "https://your-allowlist-api.up.railway.app";
+export const ALLOWLIST_API_URL = "https://buniis-allowlist-production.up.railway.app";
 
 export const EXPLORER = "https://robinhoodchain.blockscout.com";
 
