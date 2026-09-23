@@ -1,42 +1,58 @@
+import type { CSSProperties } from "react";
+
 /**
- * BuniiPad design tokens.
+ * BuniiPad design tokens — "The Warren at dusk".
  *
- * Direction: screenprint / risograph, carried over from the platform's
- * original system — thick black outlines, flat saturated color fields,
- * hard offset shadows like a print slightly out of register. No
- * gradients, no glows, no soft blur anywhere in this system.
+ * Motif: the arch (a burrow doorway). Images sit in arched frames, buttons
+ * are pills, surfaces are separated by soft plum-tinted shadows and
+ * hairlines rather than heavy outlines. Headlines use Fraunces with its
+ * SOFT and WONK axes on, body text uses Figtree.
  *
- * Palette retuned for Bunii: warm burrow/soil neutrals instead of the
- * swamp-green undertone, with a carrot-orange brand accent (color.brand)
- * in place of the collection-specific green. `sun`, `tongue`, and `deep`
- * keep their names as internal tokens but now carry warren-appropriate
- * hues — a warm gold, a rabbit-blush pink, and a deep clover green for
- * dark inversions — rather than the crocodile-specific colors they held
- * before. Placeholder direction only: swap these for real Bunii brand
- * colors/art the moment they exist.
+ * Older keys (paper, ink, brand, sun, tongue, deep, mono…) are kept so the
+ * admin page and team-mint panel keep working; they now carry this palette.
  */
 
 export const color = {
-  paper: "#F2ECE1",      // sand/cream, warm brown undertone
-  paperDeep: "#E7DCC9",  // recessed panels, table stripes
-  ink: "#211710",        // near-black, warm burrow-soil undertone
-  inkSoft: "#5C4B3A",    // secondary text
-  inkFaint: "#A0907C",   // captions, disabled
+  // surfaces
+  paper: "#F5F1FA",      // lilac mist — page background
+  paperDeep: "#ECE4F5",  // petal — recessed fills, tracks
+  card: "#FFFFFF",
+  line: "rgba(37, 22, 52, 0.10)",
 
-  brand: "#E8712B",      // carrot orange — the primary Bunii accent
-  sun: "#F5C242",        // warm gold, secondary accent
-  tongue: "#F0857C",     // rabbit-blush pink, tertiary accent
-  deep: "#2B3A1F",       // deep clover green, for dark inversions
+  // ink
+  ink: "#251634",        // deep plum
+  inkSoft: "#66577A",
+  inkFaint: "#A396B5",
+
+  // night (mint console)
+  deep: "#170E22",       // night plum
+  deepRaised: "#231632",
+  moon: "#FFF6E2",       // text on night
+
+  // accents
+  brand: "#F0679E",      // bunny-nose pink
+  sun: "#FFD470",        // moon butter
+  lilac: "#B8A4E8",
+  tongue: "#D9435E",     // errors / paused
 };
 
 export const font = {
-  display: "'Bricolage Grotesque', 'Arial Black', sans-serif",
-  body: "'Public Sans', -apple-system, sans-serif",
-  mono: "'DM Mono', 'Courier New', monospace",
+  display: "'Fraunces', 'Georgia', serif",
+  body: "'Figtree', -apple-system, 'Segoe UI', sans-serif",
+  // No monospace in this system — kept as an alias so older components
+  // that still reference font.mono render in the body face.
+  mono: "'Figtree', -apple-system, 'Segoe UI', sans-serif",
+};
+
+/** Spread onto any Fraunces headline to switch on its soft, playful cut. */
+export const displayType: CSSProperties = {
+  fontFamily: font.display,
+  fontVariationSettings: "'SOFT' 100, 'WONK' 1",
+  fontOpticalSizing: "auto",
 };
 
 export const FONT_LINK =
-  "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap";
+  "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,400..800,0..100,0..1&family=Figtree:wght@400;500;600;700&display=swap";
 
 export function loadFonts() {
   if (typeof document === "undefined") return;
@@ -48,20 +64,35 @@ export function loadFonts() {
   document.head.appendChild(link);
 }
 
-// Structural constants for the print system.
-export const RULE = `2px solid ${color.ink}`;
-export const RULE_HAIR = `1px solid ${color.ink}`;
+// Hairline used wherever a divider is needed.
+export const RULE = `1px solid ${color.line}`;
+export const RULE_HAIR = `1px solid ${color.line}`;
 
-/** Hard offset shadow — the signature misregistration effect. */
-export function offset(c: string, x = 6, y = 6) {
-  return `${x}px ${y}px 0 ${c}`;
+export const radius = { sm: "12px", md: "20px", lg: "32px", pill: "999px" };
+
+/**
+ * Soft elevation. Signature kept from the old offset() helper so existing
+ * callers still compile; the color and x/y arguments are ignored on purpose —
+ * there are no hard offset shadows in this system.
+ */
+export function offset(_c?: string, _x = 0, _y = 0) {
+  return "0 1px 2px rgba(37,22,52,0.06), 0 18px 40px -22px rgba(37,22,52,0.35)";
+}
+
+/**
+ * Border radius for an arched "burrow door" frame with a true semicircular
+ * top. `aspect` is width / height of the frame.
+ */
+export function arch(aspect: number, foot = 18) {
+  const v = `${(50 * aspect).toFixed(2)}%`;
+  return `50% 50% ${foot}px ${foot}px / ${v} ${v} ${foot}px ${foot}px`;
 }
 
 export const X_URL = "https://x.com/bunionrh";
 export const SITE_URL = "https://buniipad.xyz";
 export const JOIN_URL = "https://bunii.fun/join";
 
-// Real Bunii character art, uploaded to public/.
+// Real Bunii character art, in public/.
 export const BUNII_IMAGES = [
   "/1.jpeg", "/2.jpeg", "/3.jpeg", "/4.jpeg", "/5.jpeg", "/6.jpeg", "/7.jpeg",
   "/8.jpeg", "/9.jpeg", "/10.jpeg", "/11.jpeg", "/12.jpeg", "/13.jpeg", "/14.jpeg",
