@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAccount, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { formatEther } from "viem";
-import { color, font, RULE, offset } from "@/lib/theme";
+import { color, displayType, radius } from "@/lib/theme";
 import { BUNIIPAD_ADDRESS, BUNIIPAD_ABI, ALLOWLIST_API_URL, PHASE } from "@/lib/buniiPadContract";
 import BuniiFrame from "@/components/bunii-frame";
 import MintFeed from "@/components/mint-feed";
@@ -9,10 +9,42 @@ import PhaseTracks from "@/components/phase-tracks";
 import TeamMint from "@/components/team-mint";
 
 const PHASE_LABEL: Record<number, string> = {
-  [PHASE.CLOSED]: "Not open",
-  [PHASE.ALLOWLIST]: "Whitelist live",
+  [PHASE.CLOSED]: "Minting soon",
+  [PHASE.ALLOWLIST]: "Allowlist live",
   [PHASE.PUBLIC]: "Public live",
 };
+
+// Text and hairlines on the night console.
+const moonSoft = "rgba(255,246,226,0.64)";
+const moonLine = "rgba(255,246,226,0.12)";
+
+/** Circular progress for total minted — the console's centre readout. */
+function Ring({ minted, supply }: { minted: number | null; supply: number | null }) {
+  const size = 156, stroke = 11, r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  const pct = minted !== null && supply ? Math.min(1, minted / supply) : 0;
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }} aria-hidden>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={moonLine} strokeWidth={stroke} />
+        <circle
+          cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color.brand} strokeWidth={stroke}
+          strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct)}
+          style={{ transition: "stroke-dashoffset 0.8s cubic-bezier(0.2,0,0,1)" }}
+        />
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center" }}>
+        <div>
+          <p style={{ ...displayType, fontWeight: 700, fontSize: "1.9rem", letterSpacing: "-0.03em", margin: 0, color: color.moon }}>
+            {minted !== null ? minted.toLocaleString() : "—"}
+          </p>
+          <p style={{ fontSize: "0.8rem", color: moonSoft, margin: "2px 0 0" }}>
+            of {supply !== null ? supply.toLocaleString() : "—"} minted
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const ZERO = "0x0000000000000000000000000000000000000000" as const;
 
@@ -152,196 +184,230 @@ export default function Mint() {
   const soldOut = minted !== null && supply !== null && minted >= supply;
 
   function buttonLabel() {
-    if (!isConnected) return "Connect wallet";
-    if (paused) return "Minting paused";
-    if (!saleOpen) return "Sale hasn't opened";
-    if (isAllowlist && elig === "checking") return "Checking allowlist…";
-    if (isAllowlist && elig === "no") return "Wallet not on allowlist";
-    if (isAllowlist && elig === "error") return "Eligibility unavailable";
-    if (myLeft !== null && myLeft <= 0) return "Wallet limit reached";
-    if (isPending) return "Confirm in wallet";
+    if (!isConnected) return "Connect your wallet to mint";
+    if (paused) return "Minting is paused";
+    if (!saleOpen) return "Minting hasn't opened yet";
+    if (isAllowlist && elig === "checking") return "Checking your spot…";
+    if (isAllowlist && elig === "no") return "This wallet isn't on the allowlist";
+    if (isAllowlist && elig === "error") return "Couldn't check eligibility";
+    if (myLeft !== null && myLeft <= 0) return "You've reached your wallet limit";
+    if (isPending) return "Confirm in your wallet";
     if (confirming) return "Minting…";
-    return `Mint ${qty}`;
+    return `Mint ${qty} Bunii`;
   }
 
-  return (
-    <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "44px 22px 20px" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "30px" }}>
-        <div>
-          <p style={{ fontFamily: font.mono, fontSize: "0.7rem", letterSpacing: "0.18em", textTransform: "uppercase", color: color.inkSoft, margin: "0 0 10px" }}>
-            Genesis collection
-          </p>
-          <h1 style={{ fontFamily: font.display, fontWeight: 800, fontSize: "clamp(2.8rem, 10vw, 4.6rem)", lineHeight: 0.9, letterSpacing: "-0.04em", margin: 0 }}>
-            BUNII
-          </h1>
-        </div>
-        <span
-          style={{
-            fontFamily: font.mono, fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase",
-            padding: "9px 16px", border: RULE,
-            background: soldOut ? color.ink : paused ? color.tongue : !saleOpen ? color.paper : color.brand,
-            color: !saleOpen && !paused && !soldOut ? color.ink : color.paper,
-          }}
-        >
-          {soldOut ? "Sold out" : paused ? "Paused" : PHASE_LABEL[phaseNum]}
-        </span>
-      </div>
+  const unitLabel =
+    price === undefined ? "—" : BigInt(price as bigint) === 0n ? "Free" : `${formatEther(BigInt(price as bigint))} ETH`;
+  const limitLabel =
+    walletCap === undefined ? "—"
+      : BigInt(walletCap as bigint) > 1_000_000n ? "No limit"
+      : `${Number(walletCap)} per wallet`;
 
-      {!soldOut && isAllowlist && secondsLeft !== null && (
+  const statusBg = soldOut ? color.moon : paused ? color.tongue : !saleOpen ? moonLine : color.brand;
+  const statusFg = soldOut ? color.ink : !saleOpen ? color.moon : "#fff";
+
+  const stepBtn: React.CSSProperties = {
+    width: "46px", height: "46px", borderRadius: "50%", border: "none", cursor: "pointer",
+    background: moonLine, color: color.moon, fontSize: "1.4rem", lineHeight: 1,
+    display: "grid", placeItems: "center",
+  };
+
+  return (
+    <div style={{ maxWidth: "1180px", margin: "0 auto", padding: "32px 20px 0" }}>
+      {/* ── the burrow: night console ── */}
+      <section
+        style={{
+          position: "relative", overflow: "hidden", borderRadius: "36px",
+          background: color.deep, color: color.moon,
+          padding: "clamp(24px, 5vw, 56px)",
+        }}
+      >
+        <span
+          aria-hidden
+          style={{
+            position: "absolute", width: "220px", height: "220px", borderRadius: "50%",
+            background: color.sun, top: "-120px", left: "-60px", opacity: 0.9,
+          }}
+        />
+
         <div
           style={{
-            border: RULE, background: secondsLeft > 0 ? color.ink : color.paperDeep,
-            padding: "16px 20px", marginBottom: "26px",
-            display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px",
+            position: "relative",
+            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: "clamp(32px, 5vw, 64px)", alignItems: "center",
           }}
         >
-          <span style={{ fontFamily: font.mono, fontSize: "0.68rem", letterSpacing: "0.12em", textTransform: "uppercase", color: secondsLeft > 0 ? color.paper : color.inkSoft }}>
-            {secondsLeft > 0 ? "Whitelist window" : "Suggested window elapsed"}
-          </span>
-          <span
-            style={{
-              fontFamily: font.mono, fontSize: "1.5rem", fontWeight: 500,
-              color: secondsLeft > 0 ? color.sun : color.inkFaint, letterSpacing: "0.02em",
-            }}
-          >
-            {formatDuration(secondsLeft)}
-          </span>
-          <span style={{ fontFamily: font.mono, fontSize: "0.66rem", color: secondsLeft > 0 ? color.paper : color.inkFaint, opacity: 0.75 }}>
-            Minting stays open until the team starts the next phase.
-          </span>
-        </div>
-      )}
+          {/* art */}
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <BuniiFrame width={400} aspect={0.8} tone="dark" />
+          </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "26px", alignItems: "start" }}>
-        {/* left column */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "26px" }}>
-          <BuniiFrame size={380} />
-          <MintFeed />
-        </div>
+          {/* console */}
+          <div>
+            <span
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "8px",
+                padding: "7px 14px", borderRadius: radius.pill,
+                background: statusBg, color: statusFg, fontSize: "0.86rem", fontWeight: 700,
+              }}
+            >
+              {saleOpen && !paused && !soldOut && (
+                <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#fff", animation: "pulse 1.6s ease-in-out infinite" }} />
+              )}
+              {soldOut ? "Sold out" : paused ? "Paused" : PHASE_LABEL[phaseNum]}
+            </span>
 
-        {/* right column */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
-          {/* overall supply */}
-          <section style={{ border: RULE, background: color.paper }}>
-            <div style={{ padding: "20px 18px 18px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "14px" }}>
-                <span style={{ fontFamily: font.mono, fontSize: "0.66rem", letterSpacing: "0.14em", textTransform: "uppercase", color: color.inkSoft }}>
-                  Total minted
-                </span>
-                <span style={{ fontFamily: font.display, fontWeight: 800, fontSize: "1.9rem", letterSpacing: "-0.03em" }}>
-                  {minted !== null ? minted.toLocaleString() : "—"}
-                  <span style={{ color: color.inkFaint, fontWeight: 600 }}> / {supply !== null ? supply.toLocaleString() : "—"}</span>
-                </span>
-              </div>
+            <h1
+              style={{
+                ...displayType, fontWeight: 700, color: color.moon,
+                fontSize: "clamp(3rem, 8vw, 4.8rem)", lineHeight: 0.95, letterSpacing: "-0.045em",
+                margin: "18px 0 8px",
+              }}
+            >
+              Bunii
+            </h1>
+            <p style={{ color: moonSoft, fontSize: "1.02rem", margin: "0 0 28px" }}>
+              The genesis collection of 10,000, first to launch on BuniiPad.
+            </p>
 
-              <div style={{ height: "18px", border: RULE, background: color.paperDeep, position: "relative", overflow: "hidden" }}>
-                <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: `${pct}%`, background: color.brand, transition: "width 0.5s cubic-bezier(0.2,0,0,1)" }} />
-                {[25, 50, 75].map((m) => (
-                  <span key={m} style={{ position: "absolute", top: 0, bottom: 0, left: `${m}%`, width: "2px", background: color.ink, opacity: 0.35 }} />
-                ))}
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px", fontFamily: font.mono, fontSize: "0.6rem", color: color.inkFaint }}>
-                <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
-              </div>
-            </div>
-          </section>
-
-          <PhaseTracks
-            phase={phaseNum}
-            teamMinted={totalTeam}
-            teamCap={teamCap}
-            allowlistMinted={totalAL}
-            allowlistCap={alCap}
-            publicMinted={totalPub}
-            mintableSupply={mintableSupply}
-            elig={elig}
-            isConnected={isConnected}
-          />
-
-          {/* controls */}
-          {soldOut ? (
-            <section style={{ border: RULE, background: color.ink, color: color.paper, boxShadow: offset(color.brand) }}>
-              <div style={{ padding: "28px 20px", textAlign: "center" }}>
-                <p style={{ fontFamily: font.display, fontWeight: 800, fontSize: "1.7rem", letterSpacing: "-0.02em", margin: "0 0 8px" }}>
-                  {minted?.toLocaleString()} / {supply?.toLocaleString()}
-                </p>
-                <p style={{ fontFamily: font.mono, fontSize: "0.82rem", color: color.paper, opacity: 0.85, margin: 0 }}>
-                  Every Bunii has a home. Minting is closed.
-                </p>
-              </div>
-            </section>
-          ) : (
-            <section style={{ border: RULE, background: color.paper, boxShadow: offset(color.ink) }}>
-              <div style={{ display: "flex", borderBottom: RULE }}>
-                <div style={{ padding: "16px 18px", flex: 1 }}>
-                  <p style={{ fontFamily: font.mono, fontSize: "0.62rem", letterSpacing: "0.14em", textTransform: "uppercase", color: color.inkSoft, margin: "0 0 4px" }}>
-                    Amount
-                  </p>
-                  <p style={{ fontFamily: font.display, fontWeight: 800, fontSize: "2rem", margin: 0, letterSpacing: "-0.03em" }}>{qty}</p>
+            <div style={{ display: "flex", alignItems: "center", gap: "26px", flexWrap: "wrap", marginBottom: "28px" }}>
+              <Ring minted={minted} supply={supply} />
+              <dl style={{ margin: 0, display: "grid", gap: "14px", minWidth: "160px" }}>
+                <div>
+                  <dt style={{ fontSize: "0.84rem", color: moonSoft }}>Price</dt>
+                  <dd style={{ ...displayType, margin: "2px 0 0", fontSize: "1.45rem", fontWeight: 650, letterSpacing: "-0.02em" }}>{unitLabel}</dd>
                 </div>
-                <button
-                  onClick={() => setQty((q) => Math.max(1, q - 1))}
-                  aria-label="Decrease amount"
-                  style={{ width: "64px", borderLeft: RULE, background: color.paper, cursor: "pointer", fontSize: "1.5rem", borderTop: "none", borderRight: "none", borderBottom: "none" }}
-                >−</button>
-                <button
-                  onClick={() => setQty((q) => Math.min(Math.max(1, maxQty), q + 1))}
-                  aria-label="Increase amount"
-                  style={{ width: "64px", borderLeft: RULE, background: color.sun, cursor: "pointer", fontSize: "1.5rem", borderTop: "none", borderRight: "none", borderBottom: "none" }}
-                >+</button>
-                <button
-                  onClick={() => setQty(Math.max(1, maxQty))}
-                  disabled={maxQty <= 1}
-                  aria-label="Set to maximum available"
+                <div>
+                  <dt style={{ fontSize: "0.84rem", color: moonSoft }}>Limit</dt>
+                  <dd style={{ margin: "2px 0 0", fontSize: "1.02rem", fontWeight: 600 }}>
+                    {limitLabel}
+                    {isConnected && mine !== undefined && myLeft !== null && myLeft < 1_000_000 && (
+                      <span style={{ color: moonSoft, fontWeight: 500 }}> · {Math.max(0, myLeft)} left for you</span>
+                    )}
+                  </dd>
+                </div>
+                {poolLeft !== null && (
+                  <div>
+                    <dt style={{ fontSize: "0.84rem", color: moonSoft }}>Available now</dt>
+                    <dd style={{ margin: "2px 0 0", fontSize: "1.02rem", fontWeight: 600 }}>{Math.max(0, poolLeft).toLocaleString()}</dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+
+            {!soldOut && isAllowlist && secondsLeft !== null && secondsLeft > 0 && (
+              <div
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap",
+                  padding: "14px 18px", borderRadius: radius.md, background: color.deepRaised, marginBottom: "20px",
+                }}
+              >
+                <span style={{ fontSize: "0.9rem", color: moonSoft }}>Suggested allowlist window</span>
+                <span style={{ ...displayType, fontSize: "1.4rem", fontWeight: 650, color: color.sun }}>{formatDuration(secondsLeft)}</span>
+              </div>
+            )}
+
+            {soldOut ? (
+              <div style={{ padding: "22px", borderRadius: radius.md, background: color.deepRaised }}>
+                <p style={{ ...displayType, fontSize: "1.5rem", fontWeight: 650, margin: "0 0 6px" }}>Every Bunii has a home.</p>
+                <p style={{ color: moonSoft, margin: 0 }}>Minting is closed. Find Bunii on secondary marketplaces.</p>
+              </div>
+            ) : (
+              <>
+                {/* quantity */}
+                <div
                   style={{
-                    width: "64px", borderLeft: RULE, background: color.paperDeep,
-                    cursor: maxQty > 1 ? "pointer" : "not-allowed", fontSize: "0.66rem",
-                    fontFamily: font.mono, letterSpacing: "0.06em", textTransform: "uppercase",
-                    color: maxQty > 1 ? color.ink : color.inkFaint,
-                    borderTop: "none", borderRight: "none", borderBottom: "none",
+                    display: "flex", alignItems: "center", gap: "10px",
+                    padding: "8px", borderRadius: radius.pill, background: color.deepRaised, marginBottom: "14px",
                   }}
-                >Max</button>
-              </div>
+                >
+                  <button className="press" style={stepBtn} onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Decrease amount">−</button>
+                  <span
+                    aria-live="polite"
+                    style={{ ...displayType, flex: 1, textAlign: "center", fontSize: "1.7rem", fontWeight: 700 }}
+                  >
+                    {qty}
+                  </span>
+                  <button className="press" style={stepBtn} onClick={() => setQty((q) => Math.min(Math.max(1, maxQty), q + 1))} aria-label="Increase amount">+</button>
+                  <button
+                    onClick={() => setQty(Math.max(1, maxQty))}
+                    disabled={maxQty <= 1}
+                    aria-label="Set to the maximum you can mint"
+                    style={{
+                      height: "46px", padding: "0 18px", borderRadius: radius.pill, border: "none",
+                      background: "transparent", boxShadow: `inset 0 0 0 1px ${moonLine}`,
+                      color: maxQty > 1 ? color.moon : moonSoft, fontWeight: 700, fontSize: "0.9rem",
+                      cursor: maxQty > 1 ? "pointer" : "not-allowed",
+                    }}
+                  >
+                    Max
+                  </button>
+                </div>
 
-              <div style={{ padding: "16px 18px", display: "flex", justifyContent: "space-between", fontFamily: font.mono, fontSize: "0.82rem", borderBottom: RULE }}>
-                <span style={{ color: color.inkSoft }}>Total incl. fee</span>
-                <span style={{ fontWeight: 500 }}>{totalCost ? `${totalCost} ETH` : "—"}</span>
-              </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "4px 6px 18px" }}>
+                  <span style={{ color: moonSoft, fontSize: "0.94rem" }}>Total, including platform fee</span>
+                  <span style={{ fontWeight: 700, fontSize: "1.05rem" }}>
+                    {totalCost === null ? "—" : Number(totalCost) === 0 ? "Free" : `${totalCost} ETH`}
+                  </span>
+                </div>
 
-              <div style={{ padding: "18px" }}>
                 <button
                   onClick={mint}
                   disabled={!canMint || isPending || confirming}
                   className={canMint ? "press" : undefined}
                   style={{
-                    width: "100%", padding: "18px", border: RULE,
+                    width: "100%", height: "60px", borderRadius: radius.pill, border: "none",
+                    fontWeight: 700, fontSize: "1.05rem",
                     cursor: canMint && !isPending && !confirming ? "pointer" : "not-allowed",
-                    fontFamily: font.display, fontWeight: 800, fontSize: "1.05rem", letterSpacing: "-0.01em",
-                    background: canMint ? color.ink : color.paperDeep,
-                    color: canMint ? color.paper : color.inkFaint,
-                    boxShadow: canMint ? offset(color.brand, 5, 5) : "none",
+                    background: canMint ? color.sun : moonLine,
+                    color: canMint ? color.ink : moonSoft,
                   }}
                 >
                   {buttonLabel()}
                 </button>
 
                 {writeError && (
-                  <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.tongue, margin: "12px 0 0" }}>
-                    {(writeError as any).shortMessage ?? "Transaction failed. Try again."}
+                  <p role="alert" style={{ fontSize: "0.9rem", color: "#FF8FA3", margin: "14px 4px 0" }}>
+                    {(writeError as any).shortMessage ?? "The transaction didn't go through. Try again."}
                   </p>
                 )}
                 {isSuccess && (
-                  <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.brand, margin: "12px 0 0" }}>
+                  <p style={{ fontSize: "0.95rem", color: color.sun, margin: "14px 4px 0", fontWeight: 600 }}>
                     Minted. Welcome to The Warren.
                   </p>
                 )}
-              </div>
-            </section>
-          )}
-
-          {!soldOut && <TeamMint owner={owner} teamMinted={totalTeam} teamCap={teamCap} onMinted={refetch} />}
+              </>
+            )}
+          </div>
         </div>
+      </section>
+
+      {/* ── below the burrow ── */}
+      <div
+        style={{
+          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: "20px", alignItems: "start", marginTop: "24px",
+        }}
+      >
+        <PhaseTracks
+          phase={phaseNum}
+          teamMinted={totalTeam}
+          teamCap={teamCap}
+          allowlistMinted={totalAL}
+          allowlistCap={alCap}
+          publicMinted={totalPub}
+          mintableSupply={mintableSupply}
+          elig={elig}
+          isConnected={isConnected}
+        />
+        <MintFeed />
       </div>
+
+      {!soldOut && (
+        <div style={{ marginTop: "20px" }}>
+          <TeamMint owner={owner} teamMinted={totalTeam} teamCap={teamCap} onMinted={refetch} />
+        </div>
+      )}
     </div>
   );
 }
