@@ -6,7 +6,7 @@ import { RainbowKitProvider, lightTheme } from "@rainbow-me/rainbowkit";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { wagmiConfig } from "@/lib/wagmiConfig";
-import { color, font, RULE, offset } from "@/lib/theme";
+import { color, displayType, radius } from "@/lib/theme";
 import Layout from "@/components/layout";
 
 import Home from "@/pages/home";
@@ -17,32 +17,28 @@ import NavLink from "@/components/nav-link";
 const queryClient = new QueryClient();
 
 const rainbowTheme = lightTheme({
-  accentColor: "#211710",
-  accentColorForeground: "#F2ECE1",
-  borderRadius: "none",
+  accentColor: "#251634",
+  accentColorForeground: "#FFF6E2",
+  borderRadius: "large",
   fontStack: "system",
 });
 
 function NotFound() {
   return (
-    <div style={{ maxWidth: "720px", margin: "0 auto", padding: "90px 22px", textAlign: "center" }}>
-      <p style={{ fontFamily: font.mono, fontSize: "0.72rem", letterSpacing: "0.2em", textTransform: "uppercase", color: color.inkSoft, margin: "0 0 16px" }}>
-        Error 404
-      </p>
-      <h1 style={{ fontFamily: font.display, fontWeight: 800, fontSize: "clamp(2.6rem, 10vw, 4.4rem)", letterSpacing: "-0.04em", lineHeight: 0.92, margin: "0 0 20px" }}>
-        Nothing in this warren.
+    <div style={{ maxWidth: "640px", margin: "0 auto", padding: "110px 20px", textAlign: "center" }}>
+      <h1 style={{ ...displayType, fontWeight: 700, fontSize: "clamp(2.6rem, 9vw, 4.2rem)", letterSpacing: "-0.04em", lineHeight: 0.95, margin: "0 0 18px" }}>
+        Nothing in this burrow.
       </h1>
-      <p style={{ color: color.inkSoft, fontSize: "1.02rem", margin: "0 0 32px" }}>
-        That page doesn't exist. Check the menu for everything on the pad.
+      <p style={{ color: color.inkSoft, fontSize: "1.05rem", margin: "0 0 32px" }}>
+        That page doesn't exist. Head back to the homepage or the mint.
       </p>
-      <NavLink href="/" className="press"
-          style={{
-            display: "inline-block", fontFamily: font.display, fontWeight: 800, fontSize: "1rem",
-            padding: "16px 30px", border: RULE, background: color.ink, color: color.paper,
-            boxShadow: offset(color.brand, 6, 6),
-          }}>
-          Back home
-        </NavLink>
+      <NavLink
+        href="/"
+        className="press"
+        style={{ display: "inline-block", fontWeight: 600, padding: "15px 28px", borderRadius: radius.pill, background: color.ink, color: color.moon }}
+      >
+        Back home
+      </NavLink>
     </div>
   );
 }
