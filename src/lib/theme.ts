@@ -89,7 +89,7 @@ export function arch(aspect: number, foot = 18) {
 }
 
 export const X_URL = "https://x.com/bunionrh";
-export const SITE_URL = "https://buniipad.xyz";
+export const SITE_URL = "https://buniis.xyz";
 export const JOIN_URL = "https://bunii.fun/join";
 
 // Real Bunii character art, in public/.
