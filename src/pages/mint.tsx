@@ -440,6 +440,7 @@ export default function Mint() {
           teamCap={teamCap}
           allowlistMinted={totalAL}
           publicMinted={totalPub}
+          publicPrice={publicPrice}
           mintableSupply={mintableSupply}
           elig={elig}
           isConnected={isConnected}
