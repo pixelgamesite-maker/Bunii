@@ -214,6 +214,10 @@ export default function Mint() {
 
   return (
     <div style={{ maxWidth: "1180px", margin: "0 auto", padding: "32px 20px 0" }}>
+      <style>{`
+        .qty-input::-webkit-outer-spin-button,
+        .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+      `}</style>
       {/* ── the burrow: night console ── */}
       <section
         style={{
@@ -322,12 +326,28 @@ export default function Mint() {
                   }}
                 >
                   <button className="press" style={stepBtn} onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Decrease amount">−</button>
-                  <span
-                    aria-live="polite"
-                    style={{ ...displayType, flex: 1, textAlign: "center", fontSize: "1.7rem", fontWeight: 700 }}
-                  >
-                    {qty}
-                  </span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={Math.max(1, maxQty)}
+                    value={qty}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "") { setQty(1); return; }
+                      const n = Math.floor(Number(v));
+                      if (!Number.isFinite(n)) return;
+                      setQty(Math.min(Math.max(1, n), Math.max(1, maxQty)));
+                    }}
+                    onBlur={() => setQty((q) => Math.min(Math.max(1, q), Math.max(1, maxQty)))}
+                    aria-label="Amount to mint"
+                    className="qty-input"
+                    style={{
+                      ...displayType, flex: 1, textAlign: "center", fontSize: "1.7rem", fontWeight: 700,
+                      background: "transparent", border: "none", color: color.moon, width: "100%",
+                      outline: "none", MozAppearance: "textfield",
+                    }}
+                  />
                   <button className="press" style={stepBtn} onClick={() => setQty((q) => Math.min(Math.max(1, maxQty), q + 1))} aria-label="Increase amount">+</button>
                   <button
                     onClick={() => setQty(Math.max(1, maxQty))}
@@ -344,12 +364,14 @@ export default function Mint() {
                   </button>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "4px 6px 18px" }}>
-                  <span style={{ color: moonSoft, fontSize: "0.94rem" }}>Total, including platform fee</span>
-                  <span style={{ fontWeight: 700, fontSize: "1.05rem" }}>
-                    {totalCost === null ? "—" : Number(totalCost) === 0 ? "Free" : `${totalCost} ETH`}
-                  </span>
-                </div>
+                {isConnected && (
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "4px 6px 18px" }}>
+                    <span style={{ color: moonSoft, fontSize: "0.94rem" }}>Total, including platform fee</span>
+                    <span style={{ fontWeight: 700, fontSize: "1.05rem" }}>
+                      {totalCost === null ? "—" : Number(totalCost) === 0 ? "Free" : `${totalCost} ETH`}
+                    </span>
+                  </div>
+                )}
 
                 <button
                   onClick={mint}
