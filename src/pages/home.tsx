@@ -14,7 +14,7 @@ const DOORS = [
 const FACTS: { value: string; label: string }[] = [
   { value: "10,000", label: "Bunii in the collection" },
   { value: "Free", label: "for allowlisted wallets, up to 3 each" },
-  { value: "0.0007 ETH", label: "each in the public mint, no wallet limit" },
+  { value: "0.00055 ETH", label: "each in the public mint" },
   { value: "Robinhood", label: "Chain, minting on BuniiPad" },
 ];
 
