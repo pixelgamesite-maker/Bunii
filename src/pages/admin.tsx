@@ -29,6 +29,12 @@ export default function Admin() {
     functionName: "paused",
   });
 
+  const { data: transfersLocked, refetch: refetchTransfersLocked } = useReadContract({
+    address: BUNIIPAD_ADDRESS,
+    abi: BUNIIPAD_ABI,
+    functionName: "transfersLocked",
+  });
+
   const isOwner =
     isConnected && !!address && typeof owner === "string" && owner.toLowerCase() === address.toLowerCase();
 
@@ -86,6 +92,9 @@ export default function Admin() {
   const { writeContract: writePaused, data: pausedHash, isPending: pausedPending, error: pausedError, reset: resetPaused } = useWriteContract();
   const { isLoading: pausedConfirming, isSuccess: pausedSuccess } = useWaitForTransactionReceipt({ hash: pausedHash });
 
+  const { writeContract: writeLock, data: lockHash, isPending: lockPending, error: lockError, reset: resetLock } = useWriteContract();
+  const { isLoading: lockConfirming, isSuccess: lockSuccess } = useWaitForTransactionReceipt({ hash: lockHash });
+
   useEffect(() => {
     if (phaseSuccess) refetchPhase();
   }, [phaseSuccess]);
@@ -94,12 +103,26 @@ export default function Admin() {
     if (pausedSuccess) refetchPaused();
   }, [pausedSuccess]);
 
+  useEffect(() => {
+    if (lockSuccess) refetchTransfersLocked();
+  }, [lockSuccess]);
+
   function togglePaused(next: boolean) {
     resetPaused();
     writePaused({
       address: BUNIIPAD_ADDRESS,
       abi: BUNIIPAD_ABI,
       functionName: "setPaused",
+      args: [next],
+    });
+  }
+
+  function toggleTransfersLocked(next: boolean) {
+    resetLock();
+    writeLock({
+      address: BUNIIPAD_ADDRESS,
+      abi: BUNIIPAD_ABI,
+      functionName: "setTransfersLocked",
       args: [next],
     });
   }
@@ -265,6 +288,65 @@ export default function Admin() {
           )}
           <p style={{ fontFamily: font.mono, fontSize: "0.64rem", color: color.inkFaint, margin: "14px 0 0", lineHeight: 1.5 }}>
             Pausing blocks mintAllowlist and mintPublic immediately, regardless of phase. ownerMint is unaffected — team minting still works while paused.
+          </p>
+        </div>
+      </section>
+
+      {/* trading (transfer) lock control */}
+      <section style={{ border: RULE, background: color.paper, boxShadow: offset(transfersLocked ? color.tongue : color.ink), marginBottom: "30px" }}>
+        <div style={{ padding: "13px 18px", borderBottom: RULE }}>
+          <span style={{ fontFamily: font.mono, fontSize: "0.64rem", letterSpacing: "0.14em", textTransform: "uppercase", color: color.inkSoft }}>
+            Trading
+          </span>
+        </div>
+        <div style={{ padding: "18px" }}>
+          <p style={{ fontFamily: font.mono, fontSize: "0.74rem", color: color.inkSoft, margin: "0 0 14px" }}>
+            Currently: <span style={{ color: transfersLocked ? color.tongue : color.ink, fontWeight: 600 }}>
+              {transfersLocked === undefined ? "—" : transfersLocked ? "Locked" : "Unlocked"}
+            </span>
+          </p>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              onClick={() => toggleTransfersLocked(true)}
+              disabled={transfersLocked === true || lockPending || lockConfirming}
+              className={transfersLocked !== true ? "press" : undefined}
+              style={{
+                flex: 1, padding: "13px 14px", border: RULE,
+                fontFamily: font.display, fontWeight: 700, fontSize: "0.88rem",
+                cursor: transfersLocked === true ? "default" : "pointer",
+                background: transfersLocked === true ? color.tongue : color.paper,
+                color: transfersLocked === true ? color.paper : color.ink,
+              }}
+            >
+              {transfersLocked === true ? "Locked" : "Pause trading"}
+            </button>
+            <button
+              onClick={() => toggleTransfersLocked(false)}
+              disabled={transfersLocked === false || lockPending || lockConfirming}
+              className={transfersLocked !== false ? "press" : undefined}
+              style={{
+                flex: 1, padding: "13px 14px", border: RULE,
+                fontFamily: font.display, fontWeight: 700, fontSize: "0.88rem",
+                cursor: transfersLocked === false ? "default" : "pointer",
+                background: transfersLocked === false ? color.ink : color.paper,
+                color: transfersLocked === false ? color.paper : color.ink,
+              }}
+            >
+              {transfersLocked === false ? "Unlocked" : "Resume trading"}
+            </button>
+          </div>
+          {lockError && (
+            <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.tongue, marginTop: "12px" }}>
+              {(lockError as any).shortMessage ?? "Transaction failed."}
+            </p>
+          )}
+          {(lockPending || lockConfirming) && (
+            <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.inkSoft, marginTop: "12px" }}>
+              {lockPending ? "Confirm in wallet…" : "Updating…"}
+            </p>
+          )}
+          <p style={{ fontFamily: font.mono, fontSize: "0.64rem", color: color.inkFaint, margin: "14px 0 0", lineHeight: 1.5 }}>
+            Locking blocks wallet-to-wallet transfers only — minting and burning still work while locked. This freezes secondary trading on any marketplace, not just BuniiPad.
           </p>
         </div>
       </section>
