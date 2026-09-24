@@ -35,6 +35,18 @@ export default function Admin() {
     functionName: "transfersLocked",
   });
 
+  const { data: maxAllowlist, refetch: refetchMaxAllowlist } = useReadContract({
+    address: BUNIIPAD_ADDRESS,
+    abi: BUNIIPAD_ABI,
+    functionName: "maxPerWalletAllowlist",
+  });
+
+  const { data: maxPublic, refetch: refetchMaxPublic } = useReadContract({
+    address: BUNIIPAD_ADDRESS,
+    abi: BUNIIPAD_ABI,
+    functionName: "maxPerWalletPublic",
+  });
+
   const isOwner =
     isConnected && !!address && typeof owner === "string" && owner.toLowerCase() === address.toLowerCase();
 
@@ -124,6 +136,49 @@ export default function Admin() {
       abi: BUNIIPAD_ABI,
       functionName: "setTransfersLocked",
       args: [next],
+    });
+  }
+
+  const { writeContract: writeLimits, data: limitsHash, isPending: limitsPending, error: limitsError, reset: resetLimits } = useWriteContract();
+  const { isLoading: limitsConfirming, isSuccess: limitsSuccess } = useWaitForTransactionReceipt({ hash: limitsHash });
+
+  // Editable copies of the two limits. Synced from the live on-chain
+  // values whenever they load or change elsewhere, but not overwritten
+  // while the admin is actively editing (so typing isn't fought by a
+  // background refetch).
+  const [allowlistLimitInput, setAllowlistLimitInput] = useState("");
+  const [publicLimitInput, setPublicLimitInput] = useState("");
+  const [limitsTouched, setLimitsTouched] = useState(false);
+
+  useEffect(() => {
+    if (limitsTouched) return;
+    if (maxAllowlist !== undefined) setAllowlistLimitInput(String(maxAllowlist));
+    if (maxPublic !== undefined) {
+      // Anything absurdly large is the contract's "unlimited" sentinel
+      // (type(uint256).max) — show it as an empty field meaning
+      // unlimited isn't a real per-wallet number, rather than a wall of
+      // digits nobody can read.
+      setPublicLimitInput(BigInt(maxPublic as bigint) > 1_000_000n ? "" : String(maxPublic));
+    }
+  }, [maxAllowlist, maxPublic, limitsTouched]);
+
+  useEffect(() => {
+    if (limitsSuccess) { refetchMaxAllowlist(); refetchMaxPublic(); setLimitsTouched(false); }
+  }, [limitsSuccess]);
+
+  function saveWalletLimits() {
+    const al = Number(allowlistLimitInput);
+    const pub = publicLimitInput.trim() === "" ? null : Number(publicLimitInput);
+    if (!Number.isFinite(al) || al < 0) return;
+    if (pub !== null && (!Number.isFinite(pub) || pub < 0)) return;
+    resetLimits();
+    writeLimits({
+      address: BUNIIPAD_ADDRESS,
+      abi: BUNIIPAD_ABI,
+      functionName: "setWalletLimits",
+      // Empty public field = unlimited, sent as the same
+      // type(uint256).max sentinel the contract was deployed with.
+      args: [BigInt(al), pub === null ? (2n ** 256n - 1n) : BigInt(pub)],
     });
   }
 
@@ -347,6 +402,70 @@ export default function Admin() {
           )}
           <p style={{ fontFamily: font.mono, fontSize: "0.64rem", color: color.inkFaint, margin: "14px 0 0", lineHeight: 1.5 }}>
             Locking blocks wallet-to-wallet transfers only — minting and burning still work while locked. This freezes secondary trading on any marketplace, not just BuniiPad.
+          </p>
+        </div>
+      </section>
+
+      {/* wallet limits */}
+      <section style={{ border: RULE, background: color.paper, boxShadow: offset(color.ink), marginBottom: "30px" }}>
+        <div style={{ padding: "13px 18px", borderBottom: RULE }}>
+          <span style={{ fontFamily: font.mono, fontSize: "0.64rem", letterSpacing: "0.14em", textTransform: "uppercase", color: color.inkSoft }}>
+            Wallet limits
+          </span>
+        </div>
+        <div style={{ padding: "18px" }}>
+          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginBottom: "14px" }}>
+            <label style={{ flex: "1 1 160px" }}>
+              <span style={{ display: "block", fontFamily: font.mono, fontSize: "0.66rem", letterSpacing: "0.1em", textTransform: "uppercase", color: color.inkSoft, marginBottom: "6px" }}>
+                Allowlist, per wallet
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={allowlistLimitInput}
+                onChange={(e) => { setLimitsTouched(true); setAllowlistLimitInput(e.target.value); }}
+                style={{ width: "100%", padding: "11px 12px", border: RULE, background: color.paper, fontFamily: font.mono, fontSize: "0.9rem", color: color.ink, outline: "none" }}
+              />
+            </label>
+            <label style={{ flex: "1 1 160px" }}>
+              <span style={{ display: "block", fontFamily: font.mono, fontSize: "0.66rem", letterSpacing: "0.1em", textTransform: "uppercase", color: color.inkSoft, marginBottom: "6px" }}>
+                Public, per wallet
+              </span>
+              <input
+                type="number"
+                min={0}
+                placeholder="Blank = unlimited"
+                value={publicLimitInput}
+                onChange={(e) => { setLimitsTouched(true); setPublicLimitInput(e.target.value); }}
+                style={{ width: "100%", padding: "11px 12px", border: RULE, background: color.paper, fontFamily: font.mono, fontSize: "0.9rem", color: color.ink, outline: "none" }}
+              />
+            </label>
+          </div>
+          <button
+            onClick={saveWalletLimits}
+            disabled={limitsPending || limitsConfirming}
+            className="press"
+            style={{
+              width: "100%", padding: "13px 14px", border: RULE,
+              fontFamily: font.display, fontWeight: 700, fontSize: "0.88rem",
+              cursor: limitsPending || limitsConfirming ? "default" : "pointer",
+              background: color.ink, color: color.paper,
+            }}
+          >
+            {limitsPending ? "Confirm in wallet…" : limitsConfirming ? "Saving…" : "Save limits"}
+          </button>
+          {limitsError && (
+            <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.tongue, marginTop: "12px" }}>
+              {(limitsError as any).shortMessage ?? "Transaction failed."}
+            </p>
+          )}
+          {limitsSuccess && (
+            <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.ink, marginTop: "12px" }}>
+              Limits updated.
+            </p>
+          )}
+          <p style={{ fontFamily: font.mono, fontSize: "0.64rem", color: color.inkFaint, margin: "14px 0 0", lineHeight: 1.5 }}>
+            Both values are set together in one transaction — saving always sends both fields, even if you only changed one. Leave "Public" blank for no per-wallet limit.
           </p>
         </div>
       </section>
