@@ -143,9 +143,13 @@ export default function Mint() {
 
   useEffect(() => { if (isSuccess) refetch(); }, [isSuccess]);
 
-  const price = isAllowlist ? allowlistPrice : publicPrice;
-  const walletCap = isAllowlist ? maxAL : maxPub;
-  const mine = isAllowlist ? myAL : myPub;
+  const isPublic = phaseNum === PHASE.PUBLIC;
+  // While Closed, preview the allowlist phase's numbers (it's the phase
+  // that opens first) rather than silently falling through to public
+  // pricing just because the phase isn't Allowlist yet.
+  const price = isPublic ? publicPrice : allowlistPrice;
+  const walletCap = isPublic ? maxPub : maxAL;
+  const mine = isPublic ? myPub : myAL;
   const myLeft = walletCap !== undefined && mine !== undefined ? Number(walletCap) - Number(mine) : null;
 
   const poolLeft =
@@ -159,7 +163,7 @@ export default function Mint() {
   // in this comparison the stepper would let you dial past what the
   // contract can actually mint before canMint disables the button with
   // no visual max in between.
-  const qtyCap = [myLeft, poolLeft].filter((n): n is number => n !== null && n > 0);
+  const qtyCap = [myLeft, poolLeft].filter((n): n is number => n !== null && n >= 0);
   const maxQty = qtyCap.length > 0 ? Math.min(...qtyCap) : 1;
 
   // Keep qty inside the ceiling as it moves (phase change, live supply
