@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAccount, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { formatEther } from "viem";
 import { color, displayType, radius } from "@/lib/theme";
-import { BUNIIPAD_ADDRESS, BUNIIPAD_ABI, ALLOWLIST_API_URL, PHASE } from "@/lib/buniiPadContract";
+import { BUNIIPAD_ADDRESS, BUNIIPAD_ABI, ALLOWLIST_API_URL, PHASE, MINTABLE_START_UTC } from "@/lib/buniiPadContract";
 import BuniiFrame from "@/components/bunii-frame";
 import MintFeed from "@/components/mint-feed";
 import PhaseTracks from "@/components/phase-tracks";
@@ -16,6 +16,15 @@ const PHASE_LABEL: Record<number, string> = {
 
 // Text and hairlines on the night console.
 const moonSoft = "rgba(255,246,226,0.64)";
+
+/** Same as phase-tracks.tsx's helper: renders a fixed UTC instant in the
+ * visitor's own local timezone, Discord-timestamp style. */
+function formatLocalStart(date: Date) {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "short", month: "short", day: "numeric",
+    hour: "numeric", minute: "2-digit", timeZoneName: "short",
+  }).format(date);
+}
 const moonLine = "rgba(255,246,226,0.12)";
 
 /** Circular progress for total minted — the console's centre readout. */
@@ -87,6 +96,7 @@ export default function Mint() {
 
   const phaseNum = phase !== undefined ? Number(phase) : PHASE.CLOSED;
   const isAllowlist = phaseNum === PHASE.ALLOWLIST;
+  const isClosed = phaseNum === PHASE.CLOSED;
 
   /* ---- countdown — resyncs from chain every refetch, ticks locally between ---- */
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
@@ -281,15 +291,24 @@ export default function Mint() {
                   <dt style={{ fontSize: "0.84rem", color: moonSoft }}>Price</dt>
                   <dd style={{ ...displayType, margin: "2px 0 0", fontSize: "1.45rem", fontWeight: 650, letterSpacing: "-0.02em" }}>{unitLabel}</dd>
                 </div>
-                <div>
-                  <dt style={{ fontSize: "0.84rem", color: moonSoft }}>Limit</dt>
-                  <dd style={{ margin: "2px 0 0", fontSize: "1.02rem", fontWeight: 600 }}>
-                    {limitLabel}
-                    {isConnected && mine !== undefined && myLeft !== null && myLeft < 1_000_000 && (
-                      <span style={{ color: moonSoft, fontWeight: 500 }}> · {Math.max(0, myLeft)} left for you</span>
-                    )}
-                  </dd>
-                </div>
+                {isClosed ? (
+                  <div>
+                    <dt style={{ fontSize: "0.84rem", color: moonSoft }}>Starts</dt>
+                    <dd style={{ margin: "2px 0 0", fontSize: "1.02rem", fontWeight: 600 }}>
+                      {formatLocalStart(MINTABLE_START_UTC)}
+                    </dd>
+                  </div>
+                ) : (
+                  <div>
+                    <dt style={{ fontSize: "0.84rem", color: moonSoft }}>Limit</dt>
+                    <dd style={{ margin: "2px 0 0", fontSize: "1.02rem", fontWeight: 600 }}>
+                      {limitLabel}
+                      {isConnected && mine !== undefined && myLeft !== null && myLeft < 1_000_000 && (
+                        <span style={{ color: moonSoft, fontWeight: 500 }}> · {Math.max(0, myLeft)} left for you</span>
+                      )}
+                    </dd>
+                  </div>
+                )}
                 {poolLeft !== null && (
                   <div>
                     <dt style={{ fontSize: "0.84rem", color: moonSoft }}>Available now</dt>
