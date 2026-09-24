@@ -41,8 +41,23 @@ export const BUNIIPAD_ABI = [
   { type: "function", name: "allowlistPrice", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "publicPrice", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "launchpadFee", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  {
+    type: "function", name: "setPrices", stateMutability: "nonpayable",
+    inputs: [{ type: "uint256", name: "allowlistPrice_" }, { type: "uint256", name: "publicPrice_" }],
+    outputs: [],
+  },
+  {
+    type: "function", name: "setLaunchpadFee", stateMutability: "nonpayable",
+    inputs: [{ type: "uint256", name: "fee" }],
+    outputs: [],
+  },
   { type: "function", name: "maxPerWalletAllowlist", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { type: "function", name: "maxPerWalletPublic", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
+  {
+    type: "function", name: "setWalletLimits", stateMutability: "nonpayable",
+    inputs: [{ type: "uint256", name: "allowlistLimit_" }, { type: "uint256", name: "publicLimit_" }],
+    outputs: [],
+  },
   { type: "function", name: "allowlistMinted", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
   { type: "function", name: "publicMinted", stateMutability: "view", inputs: [{ type: "address" }], outputs: [{ type: "uint256" }] },
   { type: "function", name: "totalAllowlistMinted", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
