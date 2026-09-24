@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { formatEther, parseEther } from "viem";
 import { color, font, RULE, offset } from "@/lib/theme";
 import { BUNIIPAD_ADDRESS, BUNIIPAD_ABI, ALLOWLIST_API_URL, PHASE } from "@/lib/buniiPadContract";
 
@@ -45,6 +46,24 @@ export default function Admin() {
     address: BUNIIPAD_ADDRESS,
     abi: BUNIIPAD_ABI,
     functionName: "maxPerWalletPublic",
+  });
+
+  const { data: allowlistPrice, refetch: refetchAllowlistPrice } = useReadContract({
+    address: BUNIIPAD_ADDRESS,
+    abi: BUNIIPAD_ABI,
+    functionName: "allowlistPrice",
+  });
+
+  const { data: publicPrice, refetch: refetchPublicPrice } = useReadContract({
+    address: BUNIIPAD_ADDRESS,
+    abi: BUNIIPAD_ABI,
+    functionName: "publicPrice",
+  });
+
+  const { data: launchpadFee, refetch: refetchLaunchpadFee } = useReadContract({
+    address: BUNIIPAD_ADDRESS,
+    abi: BUNIIPAD_ABI,
+    functionName: "launchpadFee",
   });
 
   const isOwner =
@@ -179,6 +198,71 @@ export default function Admin() {
       // Empty public field = unlimited, sent as the same
       // type(uint256).max sentinel the contract was deployed with.
       args: [BigInt(al), pub === null ? (2n ** 256n - 1n) : BigInt(pub)],
+    });
+  }
+
+  const { writeContract: writePrices, data: pricesHash, isPending: pricesPending, error: pricesError, reset: resetPrices } = useWriteContract();
+  const { isLoading: pricesConfirming, isSuccess: pricesSuccess } = useWaitForTransactionReceipt({ hash: pricesHash });
+
+  const { writeContract: writeFee, data: feeHash, isPending: feePending, error: feeError, reset: resetFee } = useWriteContract();
+  const { isLoading: feeConfirming, isSuccess: feeSuccess } = useWaitForTransactionReceipt({ hash: feeHash });
+
+  const [allowlistPriceInput, setAllowlistPriceInput] = useState("");
+  const [publicPriceInput, setPublicPriceInput] = useState("");
+  const [pricesTouched, setPricesTouched] = useState(false);
+
+  const [feeInput, setFeeInput] = useState("");
+  const [feeTouched, setFeeTouched] = useState(false);
+
+  useEffect(() => {
+    if (pricesTouched) return;
+    if (allowlistPrice !== undefined) setAllowlistPriceInput(formatEther(allowlistPrice as bigint));
+    if (publicPrice !== undefined) setPublicPriceInput(formatEther(publicPrice as bigint));
+  }, [allowlistPrice, publicPrice, pricesTouched]);
+
+  useEffect(() => {
+    if (feeTouched) return;
+    if (launchpadFee !== undefined) setFeeInput(formatEther(launchpadFee as bigint));
+  }, [launchpadFee, feeTouched]);
+
+  useEffect(() => {
+    if (pricesSuccess) { refetchAllowlistPrice(); refetchPublicPrice(); setPricesTouched(false); }
+  }, [pricesSuccess]);
+
+  useEffect(() => {
+    if (feeSuccess) { refetchLaunchpadFee(); setFeeTouched(false); }
+  }, [feeSuccess]);
+
+  function savePrices() {
+    let al: bigint, pub: bigint;
+    try {
+      al = parseEther(allowlistPriceInput.trim() || "0");
+      pub = parseEther(publicPriceInput.trim() || "0");
+    } catch {
+      return; // invalid decimal typed — silently ignore rather than send garbage
+    }
+    resetPrices();
+    writePrices({
+      address: BUNIIPAD_ADDRESS,
+      abi: BUNIIPAD_ABI,
+      functionName: "setPrices",
+      args: [al, pub],
+    });
+  }
+
+  function saveFee() {
+    let fee: bigint;
+    try {
+      fee = parseEther(feeInput.trim() || "0");
+    } catch {
+      return;
+    }
+    resetFee();
+    writeFee({
+      address: BUNIIPAD_ADDRESS,
+      abi: BUNIIPAD_ABI,
+      functionName: "setLaunchpadFee",
+      args: [fee],
     });
   }
 
@@ -466,6 +550,118 @@ export default function Admin() {
           )}
           <p style={{ fontFamily: font.mono, fontSize: "0.64rem", color: color.inkFaint, margin: "14px 0 0", lineHeight: 1.5 }}>
             Both values are set together in one transaction — saving always sends both fields, even if you only changed one. Leave "Public" blank for no per-wallet limit.
+          </p>
+        </div>
+      </section>
+
+      {/* prices */}
+      <section style={{ border: RULE, background: color.paper, boxShadow: offset(color.ink), marginBottom: "30px" }}>
+        <div style={{ padding: "13px 18px", borderBottom: RULE }}>
+          <span style={{ fontFamily: font.mono, fontSize: "0.64rem", letterSpacing: "0.14em", textTransform: "uppercase", color: color.inkSoft }}>
+            Prices
+          </span>
+        </div>
+        <div style={{ padding: "18px" }}>
+          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", marginBottom: "14px" }}>
+            <label style={{ flex: "1 1 160px" }}>
+              <span style={{ display: "block", fontFamily: font.mono, fontSize: "0.66rem", letterSpacing: "0.1em", textTransform: "uppercase", color: color.inkSoft, marginBottom: "6px" }}>
+                Allowlist (whitelist), ETH
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={allowlistPriceInput}
+                onChange={(e) => { setPricesTouched(true); setAllowlistPriceInput(e.target.value); }}
+                style={{ width: "100%", padding: "11px 12px", border: RULE, background: color.paper, fontFamily: font.mono, fontSize: "0.9rem", color: color.ink, outline: "none" }}
+              />
+            </label>
+            <label style={{ flex: "1 1 160px" }}>
+              <span style={{ display: "block", fontFamily: font.mono, fontSize: "0.66rem", letterSpacing: "0.1em", textTransform: "uppercase", color: color.inkSoft, marginBottom: "6px" }}>
+                Public, ETH
+              </span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={publicPriceInput}
+                onChange={(e) => { setPricesTouched(true); setPublicPriceInput(e.target.value); }}
+                style={{ width: "100%", padding: "11px 12px", border: RULE, background: color.paper, fontFamily: font.mono, fontSize: "0.9rem", color: color.ink, outline: "none" }}
+              />
+            </label>
+          </div>
+          <button
+            onClick={savePrices}
+            disabled={pricesPending || pricesConfirming}
+            className="press"
+            style={{
+              width: "100%", padding: "13px 14px", border: RULE,
+              fontFamily: font.display, fontWeight: 700, fontSize: "0.88rem",
+              cursor: pricesPending || pricesConfirming ? "default" : "pointer",
+              background: color.ink, color: color.paper,
+            }}
+          >
+            {pricesPending ? "Confirm in wallet…" : pricesConfirming ? "Saving…" : "Save prices"}
+          </button>
+          {pricesError && (
+            <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.tongue, marginTop: "12px" }}>
+              {(pricesError as any).shortMessage ?? "Transaction failed."}
+            </p>
+          )}
+          {pricesSuccess && (
+            <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.ink, marginTop: "12px" }}>
+              Prices updated.
+            </p>
+          )}
+          <p style={{ fontFamily: font.mono, fontSize: "0.64rem", color: color.inkFaint, margin: "14px 0 0", lineHeight: 1.5 }}>
+            Both prices are set together in one transaction, same as wallet limits. Enter 0 for a free phase.
+          </p>
+        </div>
+      </section>
+
+      {/* launchpad fee */}
+      <section style={{ border: RULE, background: color.paper, boxShadow: offset(color.ink), marginBottom: "30px" }}>
+        <div style={{ padding: "13px 18px", borderBottom: RULE }}>
+          <span style={{ fontFamily: font.mono, fontSize: "0.64rem", letterSpacing: "0.14em", textTransform: "uppercase", color: color.inkSoft }}>
+            Launchpad fee
+          </span>
+        </div>
+        <div style={{ padding: "18px" }}>
+          <label style={{ display: "block", marginBottom: "14px" }}>
+            <span style={{ display: "block", fontFamily: font.mono, fontSize: "0.66rem", letterSpacing: "0.1em", textTransform: "uppercase", color: color.inkSoft, marginBottom: "6px" }}>
+              Per-mint fee, ETH — charged on top of the mint price, in both phases
+            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={feeInput}
+              onChange={(e) => { setFeeTouched(true); setFeeInput(e.target.value); }}
+              style={{ width: "100%", padding: "11px 12px", border: RULE, background: color.paper, fontFamily: font.mono, fontSize: "0.9rem", color: color.ink, outline: "none" }}
+            />
+          </label>
+          <button
+            onClick={saveFee}
+            disabled={feePending || feeConfirming}
+            className="press"
+            style={{
+              width: "100%", padding: "13px 14px", border: RULE,
+              fontFamily: font.display, fontWeight: 700, fontSize: "0.88rem",
+              cursor: feePending || feeConfirming ? "default" : "pointer",
+              background: color.ink, color: color.paper,
+            }}
+          >
+            {feePending ? "Confirm in wallet…" : feeConfirming ? "Saving…" : "Save fee"}
+          </button>
+          {feeError && (
+            <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.tongue, marginTop: "12px" }}>
+              {(feeError as any).shortMessage ?? "Transaction failed."}
+            </p>
+          )}
+          {feeSuccess && (
+            <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.ink, marginTop: "12px" }}>
+              Fee updated.
+            </p>
+          )}
+          <p style={{ fontFamily: font.mono, fontSize: "0.64rem", color: color.inkFaint, margin: "14px 0 0", lineHeight: 1.5 }}>
+            This is a separate pool from mint proceeds — withdrawn independently via withdrawLaunchpadFees(), not withdraw(). Currently 0 means minting stays exactly at the mint price above.
           </p>
         </div>
       </section>
