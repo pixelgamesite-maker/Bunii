@@ -2,6 +2,13 @@
 // source of truth the site reads from.
 export const BUNIIPAD_ADDRESS = "0x2E04eb88d9e9d066D7b0977848ffb02Dd4eaf346";
 
+// Informational only — nothing on-chain enforces these. Phases only
+// actually open when the team calls setPhase() from /admin. These exist
+// purely so the site can tell visitors what's planned, rendered in each
+// visitor's own local time (see phase-tracks.tsx).
+export const TEAM_START_UTC = new Date("2026-09-24T15:00:00Z");
+export const MINTABLE_START_UTC = new Date("2026-09-24T16:00:00Z");
+
 export const ALLOWLIST_API_URL = "https://buniis-allowlist-production.up.railway.app";
 
 export const EXPLORER = "https://robinhoodchain.blockscout.com";
