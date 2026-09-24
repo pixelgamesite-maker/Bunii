@@ -14,29 +14,8 @@ const DOORS = [
 const FACTS: { value: string; label: string }[] = [
   { value: "10,000", label: "Bunii in the collection" },
   { value: "Free", label: "for allowlisted wallets, up to 3 each" },
-  { value: "0.00055 ETH", label: "each in the public mint, no wallet limit" },
+  { value: "0.0007 ETH", label: "each in the public mint, no wallet limit" },
   { value: "Robinhood", label: "Chain, minting on BuniiPad" },
-];
-
-const STEPS = [
-  {
-    title: "Team reserve",
-    count: "100",
-    body: "Held back for the team and collaborators. Minted by the team, never sold.",
-    tint: color.ink,
-  },
-  {
-    title: "Allowlist",
-    count: "6,000",
-    body: "Free to mint, up to 3 per wallet. Connect on the mint page to see if you have a spot.",
-    tint: color.brand,
-  },
-  {
-    title: "Public",
-    count: "3,900",
-    body: "Unclaimed allowlist spots roll in here.",
-    tint: color.sun,
-  },
 ];
 
 const section: React.CSSProperties = { maxWidth: "1180px", margin: "0 auto", padding: "0 20px" };
@@ -168,56 +147,6 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
-
-      {/* ── how the mint runs ── */}
-      <section style={{ ...section, paddingTop: "96px" }}>
-        <div style={{ maxWidth: "640px", marginBottom: "36px" }}>
-          <h2 style={h2}>How the mint runs</h2>
-          <p style={{ color: color.inkSoft, fontSize: "1.05rem", lineHeight: 1.6, margin: 0 }}>
-            Three parts, one pool. Whatever the allowlist doesn't claim moves straight
-            into the public mint, so nothing sits unsold.
-          </p>
-        </div>
-
-        {/* proportional supply bar: 100 / 6,000 / 3,900 */}
-        <div
-          role="img"
-          aria-label="Supply split: 100 team, 6,000 allowlist, 3,900 public"
-          style={{ display: "flex", gap: "4px", height: "14px", marginBottom: "30px" }}
-        >
-          <span style={{ flex: "0 0 max(1%, 10px)", background: color.ink, borderRadius: radius.pill }} />
-          <span style={{ flex: 60, background: color.brand, borderRadius: radius.pill }} />
-          <span style={{ flex: 39, background: color.sun, borderRadius: radius.pill }} />
-        </div>
-
-        <ol
-          style={{
-            listStyle: "none", margin: 0, padding: 0,
-            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "18px",
-          }}
-        >
-          {STEPS.map((s, n) => (
-            <li key={s.title} style={{ background: color.card, borderRadius: radius.md, padding: "26px 24px", boxShadow: `inset 0 0 0 1px ${color.line}` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "18px" }}>
-                <span
-                  style={{
-                    width: "34px", height: "34px", borderRadius: "50%", flexShrink: 0,
-                    display: "grid", placeItems: "center", fontWeight: 700, fontSize: "0.95rem",
-                    background: s.tint, color: s.tint === color.sun ? color.ink : "#fff",
-                  }}
-                >
-                  {n + 1}
-                </span>
-                <span style={{ fontWeight: 700, fontSize: "1.05rem" }}>{s.title}</span>
-                <span style={{ ...displayType, marginLeft: "auto", fontWeight: 650, fontSize: "1.5rem", letterSpacing: "-0.02em" }}>
-                  {s.count}
-                </span>
-              </div>
-              <p style={{ color: color.inkSoft, fontSize: "0.97rem", lineHeight: 1.55, margin: 0 }}>{s.body}</p>
-            </li>
-          ))}
-        </ol>
       </section>
 
       {/* ── gallery ── */}
