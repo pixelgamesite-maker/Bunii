@@ -26,6 +26,12 @@ export const BUNIIPAD_ABI = [
   { type: "function", name: "owner", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] },
   { type: "function", name: "phase", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] },
   { type: "function", name: "paused", stateMutability: "view", inputs: [], outputs: [{ type: "bool" }] },
+  { type: "function", name: "transfersLocked", stateMutability: "view", inputs: [], outputs: [{ type: "bool" }] },
+  {
+    type: "function", name: "setTransfersLocked", stateMutability: "nonpayable",
+    inputs: [{ type: "bool", name: "locked" }],
+    outputs: [],
+  },
   {
     type: "function", name: "setPaused", stateMutability: "nonpayable",
     inputs: [{ type: "bool", name: "paused_" }],
