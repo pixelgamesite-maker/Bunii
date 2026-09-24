@@ -23,6 +23,12 @@ export default function Admin() {
     functionName: "phase",
   });
 
+  const { data: isPaused, refetch: refetchPaused } = useReadContract({
+    address: BUNIIPAD_ADDRESS,
+    abi: BUNIIPAD_ABI,
+    functionName: "paused",
+  });
+
   const isOwner =
     isConnected && !!address && typeof owner === "string" && owner.toLowerCase() === address.toLowerCase();
 
@@ -77,9 +83,26 @@ export default function Admin() {
   const { writeContract: writePhase, data: phaseHash, isPending: phasePending, error: phaseError, reset: resetPhase } = useWriteContract();
   const { isLoading: phaseConfirming, isSuccess: phaseSuccess } = useWaitForTransactionReceipt({ hash: phaseHash });
 
+  const { writeContract: writePaused, data: pausedHash, isPending: pausedPending, error: pausedError, reset: resetPaused } = useWriteContract();
+  const { isLoading: pausedConfirming, isSuccess: pausedSuccess } = useWaitForTransactionReceipt({ hash: pausedHash });
+
   useEffect(() => {
     if (phaseSuccess) refetchPhase();
   }, [phaseSuccess]);
+
+  useEffect(() => {
+    if (pausedSuccess) refetchPaused();
+  }, [pausedSuccess]);
+
+  function togglePaused(next: boolean) {
+    resetPaused();
+    writePaused({
+      address: BUNIIPAD_ADDRESS,
+      abi: BUNIIPAD_ABI,
+      functionName: "setPaused",
+      args: [next],
+    });
+  }
 
   function goToPhase(p: number) {
     resetPhase();
@@ -183,6 +206,65 @@ export default function Admin() {
           )}
           <p style={{ fontFamily: font.mono, fontSize: "0.64rem", color: color.inkFaint, margin: "14px 0 0", lineHeight: 1.5 }}>
             Starting whitelist requires a merkle root already set below, or every wallet will show as ineligible.
+          </p>
+        </div>
+      </section>
+
+      {/* pause control */}
+      <section style={{ border: RULE, background: color.paper, boxShadow: offset(isPaused ? color.tongue : color.ink), marginBottom: "30px" }}>
+        <div style={{ padding: "13px 18px", borderBottom: RULE }}>
+          <span style={{ fontFamily: font.mono, fontSize: "0.64rem", letterSpacing: "0.14em", textTransform: "uppercase", color: color.inkSoft }}>
+            Minting
+          </span>
+        </div>
+        <div style={{ padding: "18px" }}>
+          <p style={{ fontFamily: font.mono, fontSize: "0.74rem", color: color.inkSoft, margin: "0 0 14px" }}>
+            Currently: <span style={{ color: isPaused ? color.tongue : color.ink, fontWeight: 600 }}>
+              {isPaused === undefined ? "—" : isPaused ? "Paused" : "Not paused"}
+            </span>
+          </p>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              onClick={() => togglePaused(true)}
+              disabled={isPaused === true || pausedPending || pausedConfirming}
+              className={isPaused !== true ? "press" : undefined}
+              style={{
+                flex: 1, padding: "13px 14px", border: RULE,
+                fontFamily: font.display, fontWeight: 700, fontSize: "0.88rem",
+                cursor: isPaused === true ? "default" : "pointer",
+                background: isPaused === true ? color.tongue : color.paper,
+                color: isPaused === true ? color.paper : color.ink,
+              }}
+            >
+              {isPaused === true ? "Paused" : "Pause minting"}
+            </button>
+            <button
+              onClick={() => togglePaused(false)}
+              disabled={isPaused === false || pausedPending || pausedConfirming}
+              className={isPaused !== false ? "press" : undefined}
+              style={{
+                flex: 1, padding: "13px 14px", border: RULE,
+                fontFamily: font.display, fontWeight: 700, fontSize: "0.88rem",
+                cursor: isPaused === false ? "default" : "pointer",
+                background: isPaused === false ? color.ink : color.paper,
+                color: isPaused === false ? color.paper : color.ink,
+              }}
+            >
+              {isPaused === false ? "Live" : "Resume minting"}
+            </button>
+          </div>
+          {pausedError && (
+            <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.tongue, marginTop: "12px" }}>
+              {(pausedError as any).shortMessage ?? "Transaction failed."}
+            </p>
+          )}
+          {(pausedPending || pausedConfirming) && (
+            <p style={{ fontFamily: font.mono, fontSize: "0.72rem", color: color.inkSoft, marginTop: "12px" }}>
+              {pausedPending ? "Confirm in wallet…" : "Updating…"}
+            </p>
+          )}
+          <p style={{ fontFamily: font.mono, fontSize: "0.64rem", color: color.inkFaint, margin: "14px 0 0", lineHeight: 1.5 }}>
+            Pausing blocks mintAllowlist and mintPublic immediately, regardless of phase. ownerMint is unaffected — team minting still works while paused.
           </p>
         </div>
       </section>
