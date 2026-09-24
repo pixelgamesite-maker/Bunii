@@ -1,5 +1,6 @@
+import { formatEther } from "viem";
 import { color, displayType, radius } from "@/lib/theme";
-import { PHASE, TEAM_START_UTC, MINTABLE_START_UTC } from "@/lib/buniiPadContract";
+import { PHASE, TEAM_START_UTC, MINTABLE_START_UTC, PUBLIC_START_UTC } from "@/lib/buniiPadContract";
 
 type Elig = "idle" | "checking" | "yes" | "no" | "error";
 type Tone = "good" | "bad" | "muted";
@@ -8,13 +9,8 @@ function num(v: unknown) {
   return v === undefined || v === null ? null : Number(v);
 }
 
-/**
- * Renders a fixed UTC instant in whichever timezone the visitor's own
- * device is set to — same idea as Discord's <t:...> timestamps. No
- * explicit timeZone is passed to Intl, so it defaults to the runtime's
- * local zone; every visitor sees "their" time without any lookup or
- * manual offset math on our side.
- */
+/** Same as mint.tsx's helper: renders a fixed UTC instant in the
+ * visitor's own local timezone, Discord-timestamp style. */
 function formatLocalStart(date: Date) {
   return new Intl.DateTimeFormat(undefined, {
     weekday: "short", month: "short", day: "numeric",
@@ -76,12 +72,20 @@ function Track({
   );
 }
 
+/**
+ * Three cards: Team (fixed reserve, separate pool), GTD Free and Public
+ * (allowlist and public phases — shown as two doors into the SAME
+ * mintable pool, since the contract rolls unused allowlist supply into
+ * public rather than keeping two fixed caps. Both read the identical
+ * minted/cap numbers on purpose — that's not a bug, it's what "one
+ * shared pool" actually means.
+ */
 export default function PhaseTracks({
-  phase, teamMinted, teamCap, allowlistMinted, publicMinted, mintableSupply, elig, isConnected,
+  phase, teamMinted, teamCap, allowlistMinted, publicMinted, publicPrice, mintableSupply, elig, isConnected,
 }: {
   phase: number;
   teamMinted: unknown; teamCap: unknown;
-  allowlistMinted: unknown; publicMinted: unknown; mintableSupply: unknown;
+  allowlistMinted: unknown; publicMinted: unknown; publicPrice: unknown; mintableSupply: unknown;
   elig: Elig;
   isConnected: boolean;
 }) {
@@ -92,7 +96,6 @@ export default function PhaseTracks({
   const isAllowlist = phase === PHASE.ALLOWLIST;
   const isPublic = phase === PHASE.PUBLIC;
   const isClosed = phase === PHASE.CLOSED;
-  const tint = isPublic ? "#E3A915" : color.brand;
 
   const now = Date.now();
   const teamScheduleNote =
@@ -100,8 +103,7 @@ export default function PhaseTracks({
       ? `Planned to open ${formatLocalStart(TEAM_START_UTC)}.`
       : null;
 
-  function mintableStatus(): [string, Tone] {
-    if (isPublic) return ["Open to everyone.", "good"];
+  function gtdStatus(): [string, Tone] {
     if (isAllowlist) {
       if (isConnected) {
         if (elig === "checking") return ["Checking your wallet…", "muted"];
@@ -112,15 +114,29 @@ export default function PhaseTracks({
       }
       return ["Connect your wallet to check your spot.", "muted"];
     }
-    // Closed: show the planned time if it's still ahead of us, otherwise a
-    // generic line rather than a stale "opens at" for a moment that's passed.
     if (isClosed && now < MINTABLE_START_UTC.getTime()) {
       return [`Planned to open ${formatLocalStart(MINTABLE_START_UTC)}.`, "muted"];
+    }
+    if (isPublic) return ["Allowlist window has closed.", "muted"];
+    return ["Minting hasn't opened yet.", "muted"];
+  }
+
+  function publicStatus(): [string, Tone] {
+    if (isPublic) return ["Open to everyone.", "good"];
+    if (isClosed && now < PUBLIC_START_UTC.getTime()) {
+      return [`Planned to open ${formatLocalStart(PUBLIC_START_UTC)}.`, "muted"];
+    }
+    if (isAllowlist && now < PUBLIC_START_UTC.getTime()) {
+      return [`Opens to everyone ${formatLocalStart(PUBLIC_START_UTC)}.`, "muted"];
     }
     return ["Minting hasn't opened yet.", "muted"];
   }
 
-  const [status, tone] = mintableStatus();
+  const [gtdMsg, gtdTone] = gtdStatus();
+  const [pubMsg, pubTone] = publicStatus();
+
+  const priceLabel =
+    publicPrice === undefined ? "" : Number(publicPrice) === 0 ? "Free" : `${formatEther(publicPrice as bigint)} ETH`;
 
   return (
     <section style={{ background: color.card, borderRadius: radius.lg, padding: "22px 12px 14px", boxShadow: `inset 0 0 0 1px ${color.line}` }}>
@@ -133,8 +149,13 @@ export default function PhaseTracks({
         status={teamScheduleNote ?? "Reserved. Minted by the team, never sold."} tone="muted"
       />
       <Track
-        name="Mintable" minted={mintableMinted} cap={mintable} active={isAllowlist || isPublic} tint={tint}
-        status={status || undefined} tone={tone}
+        name="GTD Free" minted={mintableMinted} cap={mintable} active={isAllowlist} tint={color.brand}
+        status={gtdMsg || undefined} tone={gtdTone}
+      />
+      <Track
+        name={priceLabel ? `Public · ${priceLabel}` : "Public"}
+        minted={mintableMinted} cap={mintable} active={isPublic} tint="#E3A915"
+        status={pubMsg || undefined} tone={pubTone}
       />
     </section>
   );
